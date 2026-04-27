@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="ApplicationService/ApplicationService.csproj" />
+  </Folder>
+  <Folder Name="/Common/">
+    <Project Path="ResponseFramworke/ResponseFramworke.csproj" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="Domain/Domain.csproj" />
+  </Folder>
+  <Folder Name="/EndPoint/">
+    <Project Path="SampleWebApi/SampleWebApi.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="EfCore/EfCore.csproj" />
+    <Project Path="Identity/Identity.csproj" />
+  </Folder>
+</Solution>
