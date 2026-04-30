@@ -1,12 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Domain.Common;
 
-namespace Domain.Aggregates.Products
+namespace Domain.Aggregates.Products;
+
+public class Product : SoftDeletableEntity
 {
-    internal class Product
+    private Product() { } // for EF
+
+    public Product(string name, decimal price, int stock)
     {
+        ProductName = name;
+        UnitPrice = price;
+        UnitPrice = stock;
     }
+
+    public string ProductName { get; } = default!;
+    public decimal UnitPrice { get; }
+    public int UnitsInStock { get; }
+
 }
