@@ -1,7 +1,6 @@
-﻿
-using ApplicationService.Common;
+﻿using Domain.Common;
+using Domain.Contracts.Persistence;
 using Microsoft.EntityFrameworkCore;
-using ResponseFramworke;
 
 namespace EfCore.Repositories;
 
@@ -18,11 +17,8 @@ namespace EfCore.Repositories;
 /// <typeparam name="TPrimaryKey">
 /// The type of the primary key of the entity (e.g. int, Guid, string).
 /// </typeparam>
-public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<TEntity, TPrimaryKey>
-                                                                          where TEntity : class
-                                                                          //where TDbContext : IdentityDbContext<User, Role, int,
-                                                                          //    IdentityUserClaim<int>, UserRole, IdentityUserLogin<int>,
-                                                                          //    IdentityRoleClaim<int>, IdentityUserToken<int>>
+public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<TEntity, TPrimaryKey> where TEntity : class
+                                                                          where TDbContext : DbContext
 {
     #region Filds
     /// <summary>
@@ -58,7 +54,7 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// </returns>
     public virtual async Task<Result<object>> InsertAsync(TEntity entity)
     {
-        await DbSet.A(entity);
+        await DbSet.AddAsync(entity);
         await SaveChanges();
 
         return Result<object>.Success(entity);
@@ -71,7 +67,7 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// </summary>
     /// <param name="entity">The entity instance with updated values.</param>
     /// <returns>
-    /// A response containing the updated entity on success, or error information on failure.
+    /// A result containing the updated entity on success, or error information on failure.
     /// </returns>
     public virtual async Task<Result<object>> UpdateAsync(TEntity entity)
     {
@@ -89,17 +85,18 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// </summary>
     /// <param name="id">The primary key value of the entity to delete.</param>
     /// <returns>
-    /// A response containing the deleted entity on success,
+    /// A result containing the deleted entity on success,
     /// or an empty response if the entity was not found.
     /// </returns>
     public virtual async Task<Result<object>> DeleteAsync(TPrimaryKey id)
     {
         var entityToDelete = await DbSet.FindAsync(id);
-        if (entityToDelete == null) return new Response<object>("");
+        if (entityToDelete == null) return Result<object>.NotFound("Not found entity.");
+
         DbSet.Remove(entityToDelete);
         await SaveChanges();
 
-        return new Response<object>(entityToDelete);
+        return Result<object>.Success(entityToDelete);
     }
     #endregion
 
@@ -109,7 +106,7 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// </summary>
     /// <param name="entityToDelete">The entity instance to delete.</param>
     /// <returns>
-    /// A response containing the deleted entity on success, or error information on failure.
+    /// A result containing the deleted entity on success, or error information on failure.
     /// </returns>
     public virtual async Task<Result<object>> DeleteAsync(TEntity entityToDelete)
     {
@@ -118,7 +115,7 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
 
         DbSet.Remove(entityToDelete);
         await SaveChanges();
-        return new Response<object>(entityToDelete);
+        return Result<object>.Success(entityToDelete);
     }
     #endregion
 
@@ -127,12 +124,12 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// Retrieves all entities in the DbSet without tracking (read-only) and returns them as a list.
     /// </summary>
     /// <returns>
-    /// A response containing a list of all entities in the DbSet.
+    /// A result containing a list of all entities in the DbSet.
     /// </returns>
     public virtual async Task<Result<List<TEntity>>> Select()
     {
         var q = await DbSet.AsNoTracking().ToListAsync();
-        var response = new Response<List<TEntity>>(new List<TEntity>()) { Result = q };
+        var response = Result<List<TEntity>>.Success(q);
         return response;
     }
     #endregion
@@ -143,14 +140,14 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// </summary>
     /// <param name="id">The primary key value of the entity to retrieve.</param>
     /// <returns>
-    /// A response containing the entity if found, otherwise an empty response.
+    /// A result containing the entity if found, otherwise an empty response.
     /// </returns>
     public virtual async Task<Result<TEntity>> FindByIdAsync(TPrimaryKey? id)
     {
         var entity = await DbSet.FindAsync(id);
         return entity == null
-                ? new Response<TEntity>("")
-                : new Response<TEntity>(entity);
+                ? Result<TEntity>.NotFound("Not found entity whit this id.")
+                : Result<TEntity>.Success(entity);
     }
     #endregion
 
