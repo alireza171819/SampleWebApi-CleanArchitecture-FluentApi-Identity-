@@ -2,9 +2,6 @@
   <Folder Name="/Application/">
     <Project Path="ApplicationService/ApplicationService.csproj" />
   </Folder>
-  <Folder Name="/Common/">
-    <Project Path="ResponseFramworke/ResponseFramworke.csproj" />
-  </Folder>
   <Folder Name="/Domain/">
     <Project Path="Domain/Domain.csproj" />
   </Folder>
