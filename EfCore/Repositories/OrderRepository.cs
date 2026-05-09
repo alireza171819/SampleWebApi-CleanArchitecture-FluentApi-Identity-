@@ -8,7 +8,7 @@ namespace EfCore.Repositories;
 /// Provides CRUD operations (Insert, Update, Delete, Select) using Entity Framework Core.
 /// This repository communicates with the database via <see cref="AppDbContext"/>.
 /// </summary>
-public class OrderRepository : BaseRepository<AppDbContext, Order, int>, IOrderRepository
+public class OrderRepository : RepositoryBase<AppDbContext, Order, int>, IOrderRepository
 {
     #region Constructor
 

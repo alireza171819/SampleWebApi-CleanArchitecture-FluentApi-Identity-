@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EfCore.Repositories;
 
 /// <summary>
-/// Base repository that implements common CRUD operations
+/// Repository base that implements common CRUD operations
 /// for an entity type using Entity Framework Core and an IdentityDbContext.
 /// </summary>
 /// <typeparam name="TDbContext">
@@ -17,7 +17,7 @@ namespace EfCore.Repositories;
 /// <typeparam name="TPrimaryKey">
 /// The type of the primary key of the entity (e.g. int, Guid, string).
 /// </typeparam>
-public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<TEntity, TPrimaryKey> where TEntity : class
+public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IRepositoryBase<TEntity, TPrimaryKey> where TEntity : class
                                                                           where TDbContext : DbContext
 {
     #region Filds
@@ -37,7 +37,7 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// <summary>
     /// Parameterless constructor for the base repository.
     /// </summary>
-    public BaseRepository(TDbContext dbContext)
+    public RepositoryBase(TDbContext dbContext)
     {
         DbContext = dbContext;
         DbSet = dbContext.Set<TEntity>();
@@ -71,8 +71,6 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// </returns>
     public virtual async Task<Result<object>> UpdateAsync(TEntity entity)
     {
-        //DbSet.Attach(entity);
-        //DbContext.Entry(entity).State = EntityState.Modified;
         DbContext.Update(entity);
         await SaveChanges();
         return Result<object>.Success(entity);
@@ -157,9 +155,9 @@ public class BaseRepository<TDbContext, TEntity, TPrimaryKey> : IBaseRepository<
     /// This is called internally by CRUD methods but can also be used explicitly.
     /// </summary>
     /// <returns>A task representing the asynchronous save operation.</returns>
-    public async Task SaveChanges()
+    public async Task<int> SaveChanges()
     {
-        await DbContext.SaveChangesAsync();
+        return await DbContext.SaveChangesAsync();
     }
 
 

@@ -10,7 +10,7 @@ namespace EfCore.Repositories;
 /// Provides CRUD operations (Insert, Update, Delete, Select) using Entity Framework Core.
 /// This repository communicates with the database via <see cref="AppDbContext"/>.
 /// </summary>
-public class ProductRepository : BaseRepository<AppDbContext, Product, int> , IProductRepository
+public class ProductRepository : RepositoryBase<AppDbContext, Product, int> , IProductRepository
 {
     #region Constructor
     public ProductRepository(AppDbContext context) : base(context)
