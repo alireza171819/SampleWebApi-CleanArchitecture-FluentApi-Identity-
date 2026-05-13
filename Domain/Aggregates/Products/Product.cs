@@ -17,6 +17,7 @@ public class Product : SoftDeletableEntity
     public string ProductName { get; private set; } = default!;
     public decimal UnitPrice { get; private set; }
     public int UnitsInStock { get; private set; }
+
     public void SetName(string name)
     {
         if (string.IsNullOrEmpty(name))
