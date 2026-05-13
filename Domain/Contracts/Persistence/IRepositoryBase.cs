@@ -12,7 +12,7 @@ namespace Domain.Contracts.Persistence;
 /// <typeparam name="TPrimaryKey">
 /// The type of the primary key of the entity (e.g. int, Guid, string).
 /// </typeparam>
-public interface IBaseRepository<TEntity, in TPrimaryKey> where TEntity : class
+public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
 {
     /// <summary>
     /// Asynchronously inserts a new entity instance into the underlying data store.
@@ -75,6 +75,6 @@ public interface IBaseRepository<TEntity, in TPrimaryKey> where TEntity : class
     /// <returns>
     /// A task that represents the asynchronous save operation.
     /// </returns>
-    Task SaveChanges();
+    Task<int> SaveChanges();
 
 }

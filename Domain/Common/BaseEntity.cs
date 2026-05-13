@@ -14,7 +14,6 @@ public abstract class  BaseEntity
     /// </summary>
     protected BaseEntity()
     {
-        Uuid = Guid.NewGuid();
     }
     
     /// <summary>
