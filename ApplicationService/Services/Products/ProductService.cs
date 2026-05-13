@@ -1,4 +1,6 @@
 ﻿using Domain.Aggregates.Products;
+using Domain.Common;
+using Domain.Contracts.Persistence;
 using System.Net;
 
 namespace ApplicationService.Services.Products;
@@ -34,30 +36,24 @@ public class ProductService : IProductService
     /// Notes:
     /// - Generates a new UUID when not provided (Guid.Empty)
     /// - Sets creation/update timestamps on insert
-    /// - Returns an <see cref="IResponse{T}"/> describing success/failure for API usage
+    /// - Returns an <see cref="Result{T}"/> describing success/failure for API usage
     /// </summary>
     /// <param name="postProductDto">Input DTO containing product data.</param>
     /// <returns>Success flag wrapped in a response object.</returns>
-    public async Task<IResponse<bool>> Post(PostProductDto postProductDto)
+    public async Task<Result<bool>> Post(PostProductDto postProductDto)
     {
         if (postProductDto is null)
-            return new Response<bool>("Model is null .", HttpStatusCode.BadRequest);
+            return Result<bool>.BadRequest("Model is null .");
 
-        var product = new Product();
-        product.ProductName = postProductDto.ProductName;
-        product.UnitPrice = postProductDto.UnitPrice;
-        product.UnitsInStock = postProductDto.UnitsInStock;
-        product.UUId = postProductDto.UUId == Guid.Empty ? Guid.NewGuid() : postProductDto.UUId;
-        product.Code = postProductDto.Code;
-        product.GregorianDateCreate = DateTime.Now;
-        product.GregorianDateUpdate = DateTime.Now;
+        var product = new Product(postProductDto.ProductName, postProductDto.UnitPrice, postProductDto.UnitsInStock);
+        product.Uuid = postProductDto.UUId == Guid.Empty ? Guid.NewGuid() : postProductDto.UUId;
 
         var response = await _productRepository.InsertAsync(product);
 
         if (!response.IsSuccessful)
-            return new Response<bool>(response.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result<bool>.Failure(response.ErrorMessage, HttpStatusCode.InternalServerError);
 
-        return new Response<bool>(true);
+        return Result<bool>.Success(true);
     }
 
     #endregion
@@ -73,28 +69,23 @@ public class ProductService : IProductService
     /// </summary>
     /// <param name="putProductDto">Input DTO containing updated product data.</param>
     /// <returns>Success flag wrapped in a response object.</returns>
-    public async Task<IResponse<bool>> Put(PutProductDto putProductDto)
+    public async Task<Result<bool>> Put(PutProductDto putProductDto)
     {
         if (putProductDto is null)
-            return new Response<bool>("Model is null .", HttpStatusCode.BadRequest);
+            return Result<bool>.BadRequest("Model is null .");
         if (putProductDto.Id <= 0)
-            return new Response<bool>("Id is required .", HttpStatusCode.BadRequest);
+            return Result<bool>.BadRequest("Id is required .");
 
-        Product product = new();
+        Product product = new(putProductDto.ProductName, putProductDto.UnitPrice, putProductDto.UnitsInStock);
         product.Id = putProductDto.Id;
-        product.ProductName = putProductDto.ProductName;
-        product.UnitsInStock = putProductDto.UnitsInStock;
-        product.UnitPrice = putProductDto.UnitPrice;
         product.UUId = putProductDto.UUId == Guid.Empty ? Guid.NewGuid() : putProductDto.UUId;
-        product.Code = putProductDto.Code;
-        product.GregorianDateUpdate = DateTime.Now;
 
         var response = await _productRepository.UpdateAsync(product);
 
         if (!response.IsSuccessful)
-            return new Response<bool>(response.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result<bool>.Failure(response.ErrorMessage, HttpStatusCode.InternalServerError);
 
-        return new Response<bool>(true);
+        return Result<bool>.Success(true);
     }
 
     #endregion
@@ -109,22 +100,22 @@ public class ProductService : IProductService
     /// </summary>
     /// <param name="deleteProductDto">Input DTO containing the Id to delete.</param>
     /// <returns>Success flag wrapped in a response object.</returns>
-    public async Task<IResponse<bool>> Delete(DeleteProductDto deleteProductDto)
+    public async Task<Result<bool>> Delete(DeleteProductDto deleteProductDto)
     {
         if (deleteProductDto is null)
-            return new Response<bool>("deleteProductDto is null .", HttpStatusCode.BadRequest);
+            return Result<bool>.BadRequest("deleteProductDto is null .");
 
         var response = await _productRepository.FindByIdAsync(deleteProductDto.Id);
 
         if (!response.IsSuccessful)
-            return new Response<bool>(response.ErrorMessage, HttpStatusCode.NotFound);
+            return Result<bool>.NotFound(response.ErrorMessage);
 
         var responseDelete = await _productRepository.DeleteAsync(response.Result.Id);
 
         if (!responseDelete.IsSuccessful)
-            return new Response<bool>(responseDelete.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result<bool>.Failure(responseDelete.ErrorMessage, HttpStatusCode.InternalServerError);
 
-        return new Response<bool>(true);
+        return Result<bool>.Success(true);
     }
 
     #endregion
@@ -138,8 +129,8 @@ public class ProductService : IProductService
     /// - Maps entities to SingleProductDto items (used as list item DTO here)
     /// - Wraps results in ListProductDto
     /// </summary>
-    /// <returns>A list wrapper DTO inside an <see cref="IResponse{T}"/>.</returns>
-    public async Task<IResponse<ListProductDto>> GetAll()
+    /// <returns>A list wrapper DTO inside an <see cref="Result{T}"/>.</returns>
+    public async Task<Result<ListProductDto>> GetAll()
     {
         var response = await _productRepository.Select();
         if (!response.IsSuccessful || !response.Result.Any())
