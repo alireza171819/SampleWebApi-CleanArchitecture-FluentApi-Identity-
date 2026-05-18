@@ -17,14 +17,14 @@ public class Result<T>
     {
         IsSuccess = isSuccess;
         ErrorMessage = error;
-        HttpStatusCode = statusCode;
+        StatusCode = statusCode;
     }
     protected Result(T? value, bool isSuccess, string? errorMessage, HttpStatusCode statusCode = default)
     {
         IsSuccess = isSuccess;
         ErrorMessage = errorMessage;
         Value = value;
-        HttpStatusCode = statusCode;
+        StatusCode = statusCode;
     }
 
     public bool IsSuccess { get; }
@@ -32,7 +32,7 @@ public class Result<T>
     public T? Value { get; }
     public string? ErrorMessage { get; }
     public string? Message { get; }
-    public HttpStatusCode HttpStatusCode { get; }
+    public HttpStatusCode StatusCode { get; }
 
 
     /// <summary>
