@@ -1,16 +1,14 @@
 ﻿using Domain.Common;
 using Domain.Contracts.Persistence;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 namespace EfCore.Repositories;
 
 /// <summary>
-/// Repository base that implements common CRUD operations
-/// for an entity type using Entity Framework Core and an IdentityDbContext.
+/// Base abstract repository implementation for CRUD operations using Entity Framework Core.
 /// </summary>
-/// <typeparam name="TDbContext">
-/// The type of the EF Core DbContext, constrained to IdentityDbContext with custom User/Role types.
-/// </typeparam>
+/// <typeparam name="TDbContext">The type of the DbContext.</typeparam>
 /// <typeparam name="TEntity">
 /// The entity type represented by this repository.
 /// </typeparam>
@@ -25,12 +23,12 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     /// The underlying Entity Framework Core DbContext instance.
     /// Must be initialized (e.g. via DI) in a derived class or externally.
     /// </summary>
-    protected virtual TDbContext DbContext { get; set; }
+    protected virtual TDbContext DbContext { get; }
     /// <summary>
     /// The DbSet representing the collection of <typeparamref name="TEntity"/> in the context.
     /// Must be initialized (e.g. in a derived class constructor).
     /// </summary>
-    protected virtual DbSet<TEntity> DbSet { get; set; }
+    protected virtual DbSet<TEntity> DbSet { get; }
     #endregion
 
     #region Constructor
@@ -44,122 +42,192 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     }
     #endregion
 
-    #region [- InsertAsync(T_Entity entity) -]
+    #region [- InsertAsync(TEntity entity) -]
     /// <summary>
-    /// Inserts a new entity into the DbSet and saves changes to the database.
+    /// Inserts a new entity into the database.
     /// </summary>
-    /// <param name="entity">The entity instance to insert.</param>
-    /// <returns>
-    /// A response containing the inserted entity on success, or error information on failure.
-    /// </returns>
-    public virtual async Task<Result<object>> InsertAsync(TEntity entity)
+    /// <param name="entity">The entity to insert.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public virtual async Task<Result> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        await DbSet.AddAsync(entity);
-        await SaveChanges();
-
-        return Result<object>.Success(entity);
+        if (entity is null)
+            return Result.BadRequest("Entity to insert cannot be null.");
+        try
+        {
+            await DbSet.AddAsync(entity, cancellationToken);
+            await SaveChanges(cancellationToken);
+            return Result.Success();
+        }
+        catch (OperationCanceledException)
+        {
+            return Result.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+        }
+       
     }
     #endregion
 
-    #region [- UpdateAsync(T_Entity entity) -]
+    #region [- UpdateAsync(TEntity entity) -]
     /// <summary>
-    /// Updates an existing entity in the DbSet and saves changes to the database.
+    /// Updates an existing entity in the database.
     /// </summary>
-    /// <param name="entity">The entity instance with updated values.</param>
-    /// <returns>
-    /// A result containing the updated entity on success, or error information on failure.
-    /// </returns>
-    public virtual async Task<Result<object>> UpdateAsync(TEntity entity)
+    /// <param name="entity">The entity with updated values.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public virtual async Task<Result> UpdateAsync(TEntity entity, CancellationToken cancellationToken)
     {
-        DbContext.Update(entity);
-        await SaveChanges();
-        return Result<object>.Success(entity);
+        if (entity == null)
+            return Result.BadRequest("Entity to update cannot be null.");
+
+        try
+        {
+            DbSet.Update(entity);
+            await SaveChanges(cancellationToken);
+            return Result.Success();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Result.Failure("The entity was modified or deleted by another process.", HttpStatusCode.Conflict);
+        }
+        catch (Exception ex) 
+        {
+            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+        }
     }
     #endregion
 
-    #region [- DeleteAsync(U_PrimaryKey id) -]
+    #region [- DeleteAsync(TPrimaryKey id) -]
     /// <summary>
-    /// Deletes an entity from the DbSet by its primary key and saves changes to the database.
+    /// Deletes an entity by its primary key.
     /// </summary>
-    /// <param name="id">The primary key value of the entity to delete.</param>
-    /// <returns>
-    /// A result containing the deleted entity on success,
-    /// or an empty response if the entity was not found.
-    /// </returns>
-    public virtual async Task<Result<object>> DeleteAsync(TPrimaryKey id)
+    /// <param name="id">The primary key value.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result indicating success, or NotFound if entity does not exist.</returns>
+    public virtual async Task<Result> DeleteAsync(TPrimaryKey id, CancellationToken cancellationToken)
     {
-        var entityToDelete = await DbSet.FindAsync(id);
-        if (entityToDelete == null) return Result<object>.NotFound("Not found entity.");
+        if (id == null) return Result.BadRequest("Identifier is required.");
 
-        DbSet.Remove(entityToDelete);
-        await SaveChanges();
+        var entityToDelete = await DbSet.FindAsync(id, cancellationToken);
 
-        return Result<object>.Success(entityToDelete);
+        if (entityToDelete == null) return Result.NotFound("Not found entity to delete.");
+
+        try
+        {
+            DbSet.Remove(entityToDelete);
+            await SaveChanges(cancellationToken);
+            return Result.Success();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Result.Failure("The entity was modified or deleted by another process.", HttpStatusCode.Conflict);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+        }
     }
     #endregion
 
-    #region [- DeleteAsync(T_Entity entityToDelete) -]
+    #region [- DeleteAsync(TEntity entityToDelete) -]
+
     /// <summary>
-    /// Deletes the specified entity instance from the DbSet and saves changes to the database.
+    /// Deletes the specified entity instance.
     /// </summary>
     /// <param name="entityToDelete">The entity instance to delete.</param>
-    /// <returns>
-    /// A result containing the deleted entity on success, or error information on failure.
-    /// </returns>
-    public virtual async Task<Result<object>> DeleteAsync(TEntity entityToDelete)
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public virtual async Task<Result> DeleteAsync(TEntity entityToDelete, CancellationToken cancellationToken)
     {
-        if (DbContext.Entry(entityToDelete).State == EntityState.Detached)
-            DbSet.Attach(entityToDelete);
+        if (entityToDelete == null)
+            return Result.BadRequest("Entity to delete cannot be null.");
 
-        DbSet.Remove(entityToDelete);
-        await SaveChanges();
-        return Result<object>.Success(entityToDelete);
+        try
+        {
+            if (DbContext.Entry(entityToDelete).State == EntityState.Detached)
+                DbSet.Attach(entityToDelete);
+
+            DbSet.Remove(entityToDelete);
+            await SaveChanges(cancellationToken);
+            return Result.Success();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Result.Failure("The entity was modified or deleted by another process.", HttpStatusCode.Conflict);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+        }
     }
     #endregion
 
     #region [- Select() -]
     /// <summary>
-    /// Retrieves all entities in the DbSet without tracking (read-only) and returns them as a list.
+    /// Retrieves all entities as a read-only list.
     /// </summary>
-    /// <returns>
-    /// A result containing a list of all entities in the DbSet.
-    /// </returns>
-    public virtual async Task<Result<List<TEntity>>> Select()
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result containing the list of all entities (empty if none).</returns>
+    public virtual async Task<Result<List<TEntity>>> Select(CancellationToken cancellationToken)
     {
-        var q = await DbSet.AsNoTracking().ToListAsync();
-        var response = Result<List<TEntity>>.Success(q);
-        return response;
+        try
+        {
+            var entities = await DbSet.AsNoTracking().ToListAsync(cancellationToken);
+            return Result<List<TEntity>>.Success(entities);
+        }
+        catch (OperationCanceledException)
+        {
+            return Result<List<TEntity>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            return Result<List<TEntity>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+        }
     }
     #endregion
 
     #region [- FindByIdAsync(TPrimaryKey id) -]
     /// <summary>
-    /// Finds and returns a single entity by its primary key value.
+    /// Finds an entity by its primary key.
     /// </summary>
-    /// <param name="id">The primary key value of the entity to retrieve.</param>
-    /// <returns>
-    /// A result containing the entity if found, otherwise an empty response.
-    /// </returns>
-    public virtual async Task<Result<TEntity>> FindByIdAsync(TPrimaryKey? id)
+    /// <param name="id">The primary key value (can be null).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result containing the entity if found, otherwise NotFound.</returns>
+    public virtual async Task<Result<TEntity>> FindByIdAsync(TPrimaryKey? id, CancellationToken cancellationToken)
     {
-        var entity = await DbSet.FindAsync(id);
-        return entity == null
-                ? Result<TEntity>.NotFound("Not found entity whit this id.")
-                : Result<TEntity>.Success(entity);
+        if (id == null) return Result<TEntity>.BadRequest("Identifier is required.");
+
+        try
+        {
+            var entity = await DbSet.FindAsync(id, cancellationToken);
+            return entity == null
+                    ? Result<TEntity>.NotFound("Entity with this id was not found.")
+                    : Result<TEntity>.Success(entity);
+        }
+        catch (OperationCanceledException)
+        {
+            return Result<TEntity>.Failure("The request was canceled.", HttpStatusCode.RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            return Result<TEntity>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+        }
     }
     #endregion
 
     #region [- SaveChanges() -]
     /// <summary>
-    /// Saves all pending changes in the current DbContext to the database.
-    /// This is called internally by CRUD methods but can also be used explicitly.
+    /// Saves pending changes to the database.
     /// </summary>
-    /// <returns>A task representing the asynchronous save operation.</returns>
-    public async Task<int> SaveChanges()
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of affected rows.</returns>
+    private async Task<int> SaveChanges(CancellationToken cancellationToken)
     {
         return await DbContext.SaveChangesAsync();
     }
-
 
     #endregion
 }
