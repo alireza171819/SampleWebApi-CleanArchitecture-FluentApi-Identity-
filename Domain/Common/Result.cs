@@ -9,12 +9,9 @@ namespace Domain.Common;
 /// <typeparam name="T">The type of the value returned on success.</typeparam>
 public class Result<T>
 {
-    public bool IsSuccess { get; }
-    public bool IsFailure => !IsSuccess;
-    public T? Value { get; }
-    public string? ErrorMessage { get; }
-    public string? Message { get; }
-    public HttpStatusCode HttpStatusCode { get; }
+    protected Result() { }
+
+    public Result(T value) => Value = value;
 
     protected Result(bool isSuccess, string? error = null, HttpStatusCode statusCode = default)
     {
@@ -29,6 +26,14 @@ public class Result<T>
         Value = value;
         HttpStatusCode = statusCode;
     }
+
+    public bool IsSuccess { get; }
+    public bool IsFailure => !IsSuccess;
+    public T? Value { get; }
+    public string? ErrorMessage { get; }
+    public string? Message { get; }
+    public HttpStatusCode HttpStatusCode { get; }
+
 
     /// <summary>
     /// Creates a successful Result with the provided value.
