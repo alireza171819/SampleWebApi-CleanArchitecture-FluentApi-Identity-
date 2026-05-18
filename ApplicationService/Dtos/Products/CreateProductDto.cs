@@ -1,9 +1,8 @@
 ﻿
 namespace ApplicationService.Dtos.Products;
 
-public class PutProductDto
+public class CreateProductDto
 {
-    public int Id { get; set; }
     public Guid UUId { get; set; }
     public string ProductName { get; set; }
     public decimal UnitPrice { get; set; }
