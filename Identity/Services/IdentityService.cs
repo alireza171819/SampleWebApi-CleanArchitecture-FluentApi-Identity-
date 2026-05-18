@@ -25,7 +25,6 @@ public class IdentityService : IIdentityService
 
     public async Task<AuthResult> RegisterAsync(string username, string password, string email)
     {
-        // Check if user exists
         var existingUser = await _userManager.FindByNameAsync(username);
         if (existingUser != null)
             return AuthResult.Fail("Username already exists");
@@ -34,7 +33,6 @@ public class IdentityService : IIdentityService
         if (existingUser != null)
             return AuthResult.Fail("Email already exists");
 
-        // Create new user
         var user = new AppUser
         {
             UserName = username,
@@ -51,14 +49,11 @@ public class IdentityService : IIdentityService
             return AuthResult.Fail(errors);
         }
 
-        // Optionally add default role
         await _userManager.AddToRoleAsync(user, "User");
 
-        // Generate tokens
         var token = _jwtService.GenerateToken(user.Id, user.UserName!);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        // Save refresh token
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
         await _userManager.UpdateAsync(user);
@@ -66,7 +61,7 @@ public class IdentityService : IIdentityService
         return AuthResult.Ok(token, refreshToken, user.Id, user.UserName!);
     }
 
-    public async Task<AuthResult> LoginAsync(string username, string password)
+    public async Task<AuthResult> LoginAsync(string username, string password) 
     {
         var user = await _userManager.FindByNameAsync(username);
         if (user == null)
@@ -83,11 +78,9 @@ public class IdentityService : IIdentityService
         if (!result.Succeeded)
             return AuthResult.Fail("Invalid username or password");
 
-        // Generate tokens
         var token = _jwtService.GenerateToken(user.Id, user.UserName!);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        // Save refresh token
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
         await _userManager.UpdateAsync(user);
