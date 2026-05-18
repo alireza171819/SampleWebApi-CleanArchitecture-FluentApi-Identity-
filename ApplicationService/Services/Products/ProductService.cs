@@ -1,4 +1,6 @@
-﻿using Domain.Aggregates.Products;
+﻿using ApplicationService.Dtos.Products;
+using ApplicationService.Services.Contracts;
+using Domain.Aggregates.Products;
 using Domain.Common;
 using Domain.Contracts.Persistence;
 using System.Net;
@@ -29,164 +31,229 @@ public class ProductService : IProductService
     }
     #endregion
 
-    #region Post()
+    #region Create(CreateProductDto createProductDto)
     /// <summary>
-    /// Creates a new Product.
-    /// 
-    /// Notes:
-    /// - Generates a new UUID when not provided (Guid.Empty)
-    /// - Sets creation/update timestamps on insert
-    /// - Returns an <see cref="Result{T}"/> describing success/failure for API usage
+    /// Creates a new product.
     /// </summary>
-    /// <param name="postProductDto">Input DTO containing product data.</param>
-    /// <returns>Success flag wrapped in a response object.</returns>
-    public async Task<Result<bool>> Post(PostProductDto postProductDto)
+    /// <param name="createProductDto">Data transfer object containing required fields for creating an product.</param>
+    /// <param name="cancellationToken">Token to cancel the operation if needed (e.g., due to client disconnection or timeout).</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description><c>true</c> if the product was successfully created and persisted.</description></item>
+    /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result> Create(CreateProductDto createProductDto, CancellationToken cancellationToken)
     {
-        if (postProductDto is null)
-            return Result<bool>.BadRequest("Model is null .");
+        if (createProductDto is null)
+            return Result.BadRequest("Model is null.");
 
-        var product = new Product(postProductDto.ProductName, postProductDto.UnitPrice, postProductDto.UnitsInStock);
-        product.Uuid = postProductDto.UUId == Guid.Empty ? Guid.NewGuid() : postProductDto.UUId;
+        if (string.IsNullOrWhiteSpace(createProductDto.ProductName))
+            return Result.BadRequest("Product name is required.");
+        if (createProductDto.UnitPrice < 0)
+            return Result.BadRequest("Unit price cannot be negative.");
+        if (createProductDto.UnitsInStock < 0)
+            return Result.BadRequest("Units in stock cannot be negative.");
 
-        var response = await _productRepository.InsertAsync(product);
+        var product = new Product(createProductDto.ProductName, createProductDto.UnitPrice, createProductDto.UnitsInStock);
+        product.Uuid = createProductDto.UUId == Guid.Empty ? Guid.NewGuid() : createProductDto.UUId;
 
-        if (!response.IsSuccessful)
-            return Result<bool>.Failure(response.ErrorMessage, HttpStatusCode.InternalServerError);
+        var result = await _productRepository.InsertAsync(product, cancellationToken);
 
-        return Result<bool>.Success(true);
+        if (result.IsFailure)
+        {
+            // To detect the error of the user sending a duplicate uuid.
+            if (result.ErrorMessage?.Contains("duplicate") == true || result.ErrorMessage?.Contains("unique") == true)
+                return Result.Failure("Duplicate Uuid provided.", HttpStatusCode.Conflict);
+
+            return Result.Failure(result.ErrorMessage, result.StatusCode);
+        }
+
+        return Result.Success();
     }
 
     #endregion
 
-    #region Put()
+    #region Update(UpdateProductDto updateProductDto)
     /// <summary>
-    /// Updates an existing Product by replacing editable fields.
-    /// 
-    /// Notes:
-    /// - Validates that Id is present
-    /// - Updates only the fields provided by PutProductDto
-    /// - Sets update timestamp on update
-    /// </summary>
-    /// <param name="putProductDto">Input DTO containing updated product data.</param>
-    /// <returns>Success flag wrapped in a response object.</returns>
-    public async Task<Result<bool>> Put(PutProductDto putProductDto)
+    /// Update an existing product.
+    /// <param name="updateProductDto">DTO containing the product ID and fields to update .</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description><c>true</c> if the product was found and successfully updated.</description></item>
+    /// <item><description><c>false</c> if the product with the specified ID does not exist (logical failure).</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result> Update(UpdateProductDto updateProductDto, CancellationToken cancellationToken)
     {
-        if (putProductDto is null)
-            return Result<bool>.BadRequest("Model is null .");
-        if (putProductDto.Id <= 0)
-            return Result<bool>.BadRequest("Id is required .");
+        if (updateProductDto is null)
+            return Result.BadRequest("Model is null.");
 
-        Product product = new(putProductDto.ProductName, putProductDto.UnitPrice, putProductDto.UnitsInStock);
-        product.Id = putProductDto.Id;
-        product.UUId = putProductDto.UUId == Guid.Empty ? Guid.NewGuid() : putProductDto.UUId;
+        if (updateProductDto.Id <= 0)
+            return Result.BadRequest("Id is required.");
 
-        var response = await _productRepository.UpdateAsync(product);
+        if (string.IsNullOrWhiteSpace(updateProductDto.ProductName))
+            return Result.BadRequest("Product name is required.");
 
-        if (!response.IsSuccessful)
-            return Result<bool>.Failure(response.ErrorMessage, HttpStatusCode.InternalServerError);
+        if (updateProductDto.UnitPrice < 0)
+            return Result.BadRequest("Unit price cannot be negative.");
 
-        return Result<bool>.Success(true);
+        if (updateProductDto.UnitsInStock < 0)
+            return Result.BadRequest("Units in stock cannot be negative.");
+
+        Product product = new(updateProductDto.ProductName, updateProductDto.UnitPrice, updateProductDto.UnitsInStock);
+        product.Id = updateProductDto.Id;
+        product.Uuid = updateProductDto.UUId == Guid.Empty ? Guid.NewGuid() : updateProductDto.UUId;
+
+        var updateResult = await _productRepository.UpdateAsync(product, cancellationToken);
+
+        if (updateResult.IsFailure)
+            return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
+
+        return Result.Success();
     }
 
     #endregion
 
-    #region Delete()
+    #region SoftDelete(ProductByIdDto productByIdDto)
+
     /// <summary>
-    /// Deletes a Product by deleteProductDto.
-    /// 
-    /// Notes:
-    /// - First checks existence via FindByIdAsync
-    /// - Then performs delete by repository
+    /// Soft deletes a product by setting IsDeleted to true.
     /// </summary>
-    /// <param name="deleteProductDto">Input DTO containing the Id to delete.</param>
-    /// <returns>Success flag wrapped in a response object.</returns>
-    public async Task<Result<bool>> Delete(DeleteProductDto deleteProductDto)
+    /// <param name="productByIdDto">Product identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Success result or appropriate error.</returns>
+    public async Task<Result> SoftDeleteAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
     {
-        if (deleteProductDto is null)
-            return Result<bool>.BadRequest("deleteProductDto is null .");
+        if (productByIdDto is null || productByIdDto.Id <= 0)
+            return Result.BadRequest("Model is null or invalid.");
 
-        var response = await _productRepository.FindByIdAsync(deleteProductDto.Id);
+        var findResult = await _productRepository.FindByIdAsync(productByIdDto.Id, cancellationToken);
 
-        if (!response.IsSuccessful)
-            return Result<bool>.NotFound(response.ErrorMessage);
+        if (findResult.IsFailure)
+            return Result.Failure(findResult.ErrorMessage, findResult.StatusCode);
 
-        var responseDelete = await _productRepository.DeleteAsync(response.Result.Id);
+        var product = findResult.Value;
 
-        if (!responseDelete.IsSuccessful)
-            return Result<bool>.Failure(responseDelete.ErrorMessage, HttpStatusCode.InternalServerError);
+        if (product.IsDeleted)
+            return Result.Failure("Product has already been deleted.", HttpStatusCode.Conflict);
 
-        return Result<bool>.Success(true);
+        product.Delete();
+
+        var updateResult = await _productRepository.UpdateAsync(product, cancellationToken);
+
+        if (updateResult.IsFailure)
+            return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
+
+        return Result.Success();
+    }
+
+    #endregion
+
+    #region Delete(ProductByIdDto deleteProductDto)
+    /// <summary>
+    /// Deletes an product by its identifier.
+    /// </summary>
+    /// <param name="productByIdDto">DTO containing the ID of the product to delete.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description><c>true</c> if the product was found and deleted successfully.</description></item>
+    /// <item><description><c>false</c> if no product with the given ID exists.</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result> Delete(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    {
+        if (productByIdDto is null || productByIdDto.Id <= 0)
+            return Result.BadRequest("Model is null or invalid.");
+
+        var result = await _productRepository.DeleteAsync(productByIdDto.Id, cancellationToken);
+
+        if (!result.IsSuccess && result.StatusCode == HttpStatusCode.NotFound)
+            return Result.NotFound("Not found product for delete.");
+
+        if (result.IsFailure)
+            return Result.Failure(result.ErrorMessage, result.StatusCode);
+
+        return Result.Success();
+    }
+
+    #endregion
+
+    #region GetById(ProductByIdDto productByIdDto)
+
+    /// <summary>
+    /// Retrieves a single product by its unique identifier.
+    /// </summary>
+    /// <param name="productByIdDto">DTO containing the product ID to fetch.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description>The <see cref="SingleProductDto"/> if the product exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result<SingleProductDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    {
+        if (productByIdDto is null || productByIdDto.Id <= 0)
+            return Result<SingleProductDto>.BadRequest("Model is null or invalid.");
+
+        var result = await _productRepository.FindByIdAsync(productByIdDto.Id, cancellationToken);
+
+        if (result.IsFailure)
+            return Result<SingleProductDto>.Failure("Product not found.", result.StatusCode);
+
+        var product = result.Value;
+        var productDto = new SingleProductDto
+        {
+            Id = product.Id,
+            ProductName = product.ProductName,
+            UnitsInStock = product.UnitsInStock,
+            UnitPrice = product.UnitPrice,
+            Uuid = product.Uuid
+        };
+
+        return Result<SingleProductDto>.Success(productDto);
     }
 
     #endregion
 
     #region GetAll()
     /// <summary>
-    /// Retrieves all products.
-    /// 
-    /// Notes:
-    /// - Calls repository Select()
-    /// - Maps entities to SingleProductDto items (used as list item DTO here)
-    /// - Wraps results in ListProductDto
+    /// Retrieves all products from the data source.
     /// </summary>
-    /// <returns>A list wrapper DTO inside an <see cref="Result{T}"/>.</returns>
-    public async Task<Result<ListProductDto>> GetAll()
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
+    /// <returns>
+    /// A standardized result containing a <see cref="ListProductDto"/> with all products.
+    /// If no products exist, returns a successful result with an empty list (not NotFound).
+    /// In case of a database or infrastructure error, returns a failure result.
+    /// </returns>
+    public async Task<Result<ListProductDto>> GetAll(CancellationToken cancellationToken)
     {
-        var response = await _productRepository.Select();
-        if (!response.IsSuccessful || !response.Result.Any())
-            return new Response<ListProductDto>(new ListProductDto { ProductDtos = new List<SingleProductDto>() }, false, "", response.ErrorMessage, HttpStatusCode.NotFound);
+        var result = await _productRepository.Select(cancellationToken);
 
-        var products = response.Result;
-        ListProductDto listProductDto = new() { ProductDtos = new List<SingleProductDto>() };
-        foreach (var product in products)
+        if (result.IsFailure)
+            return Result<ListProductDto>.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
+
+        if (result.Value == null || !result.Value.Any())
+            return Result<ListProductDto>.Success(new ListProductDto { ProductDtos = new List<SingleProductDto>() });
+
+        var productDtos = result.Value.Select(product => new SingleProductDto
         {
-            var singleProductDto = new SingleProductDto
-            {
-                Id = product.Id,
-                ProductName = product.ProductName,
-                UnitsInStock = product.UnitsInStock,
-                UnitPrice = product.UnitPrice,
-                Code = product.Code,
-                UUId = product.UUId
-            };
-            listProductDto.ProductDtos.Add(singleProductDto);
-        }
-        return new Response<ListProductDto>(listProductDto, true, "The process was completed successfully.", "", HttpStatusCode.OK);
-    }
+            Id = product.Id,
+            ProductName = product.ProductName,
+            UnitsInStock = product.UnitsInStock,
+            UnitPrice = product.UnitPrice,
+            Uuid = product.Uuid
+        }).ToList();
 
-    #endregion
-
-    #region GetById()
-    /// <summary>
-    /// Retrieves a single product by Id.
-    /// 
-    /// Notes:
-    /// - Validates Id is not zero
-    /// - Returns NotFound when repository returns null result
-    /// - Maps entity to SingleProductDto
-    /// </summary>
-    /// <param name="getByIdProductDto">DTO containing the Id of the product to fetch.</param>
-    /// <returns>A product DTO wrapped in an <see cref="IResponse{T}"/>.</returns>
-    public async Task<IResponse<SingleProductDto>> GetById(GetByIdProductDto getByIdProductDto)
-    {
-        if (getByIdProductDto.Id == 0)
-            return new Response<SingleProductDto>("Id is empty .", HttpStatusCode.BadRequest);
-
-        var response = await _productRepository.FindByIdAsync(getByIdProductDto.Id);
-
-        if (response.Result is null)
-            return new Response<SingleProductDto>(response.ErrorMessage, HttpStatusCode.NotFound);
-
-        var product = response.Result;
-        SingleProductDto productDto = new();
-        productDto.Id = product.Id;
-        productDto.ProductName = product.ProductName;
-        productDto.UnitsInStock = product.UnitsInStock;
-        productDto.UnitPrice = product.UnitPrice;
-        productDto.Code = product.Code;
-        productDto.UUId = product.UUId;
-
-        return new Response<SingleProductDto>(productDto, true, "The process was completed successfully.", "", HttpStatusCode.OK);
+        var listProductDto = new ListProductDto { ProductDtos = productDtos };
+        return Result<ListProductDto>.Success(listProductDto);
     }
 
     #endregion

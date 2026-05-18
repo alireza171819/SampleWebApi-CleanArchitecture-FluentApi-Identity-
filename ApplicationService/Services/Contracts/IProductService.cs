@@ -1,4 +1,5 @@
 ﻿
+using ApplicationService.Dtos.Products;
 using Domain.Common;
 
 namespace ApplicationService.Services.Contracts;
@@ -15,44 +16,67 @@ public interface IProductService
     /// <summary>
     /// Creates a new product.
     /// </summary>
-    /// <param name="postProductDto">DTO containing the data required to create a product.</param>
+    /// <param name="createProductDto">DTO containing product data .</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., client disconnect or timeout).</param>
     /// <returns>
-    /// A standardized result where the value indicates whether the operation succeeded.
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description><c>true</c> if the product was successfully created and persisted.</description></item>
+    /// <item><description><c>false</c> if a logical conflict occurs (e.g., duplicate product code). Validation errors return <c>BadRequest</c>.</description></item>
+    /// </list>
     /// </returns>
-    Task<Result<bool>> Post(PostProductDto postProductDto);
+    Task<Result> Create(CreateProductDto createProductDto, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Updates an existing product.
+    /// Replaces an existing product with the provided data.
     /// </summary>
-    /// <param name="putProductDto">DTO containing the product identifier and updated data.</param>
+    /// <param name="updateProductDto">DTO containing product ID and all updatable fields.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
-    /// A standardized result where the value indicates whether the operation succeeded.
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description><c>true</c> if the product was found and successfully updated.</description></item>
+    /// <item><description><c>false</c> if no product with the specified ID exists (logical failure).</description></item>
+    /// </list>
     /// </returns>
-    Task<Result<bool>> Put(PutProductDto putProductDto);
+    Task<Result> Update(UpdateProductDto updateProductDto, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Deletes an existing product.
+    /// Deletes a product by its identifier.
     /// </summary>
-    /// <param name="deleteProductDto">DTO containing the identifier of the product to delete.</param>
+    /// <param name="productByIdDto">DTO containing the product ID to delete.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
-    /// A standardized result where the value indicates whether the operation succeeded.
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description><c>true</c> if the product was found and deleted successfully.</description></item>
+    /// <item><description><c>false</c> if no product with the given ID exists.</description></item>
+    /// </list>
     /// </returns>
-    Task<Result<bool>> Delete(DeleteProductDto deleteProductDto);
+    Task<Result> Delete(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Retrieves all products.
+    /// Retrieves all products from the data source.
     /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
-    /// A standardized result containing a list wrapper DTO.
+    /// A standardized result containing a <see cref="ListProductDto"/> with all products.
+    /// If no products exist, returns a successful result with an empty list (not <c>NotFound</c>).
+    /// On database or infrastructure error, returns a failure result.
     /// </returns>
-    Task<Result<ListProductDto>> GetAll();
+    Task<Result<ListProductDto>> GetAll(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Retrieves a single product by its identifier.
+    /// Retrieves a single product by its unique identifier.
     /// </summary>
-    /// <param name="getByIdProductDto">DTO containing the identifier of the product to retrieve.</param>
+    /// <param name="productByIdDto">DTO containing the product ID to fetch.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
-    /// A standardized result containing the product data when found.
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description>The <see cref="SingleProductDto"/> if the product exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
+    /// </list>
     /// </returns>
-    Task<Result<SingleProductDto>> GetById(GetByIdProductDto getByIdProductDto);
+    Task<Result<SingleProductDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 }
