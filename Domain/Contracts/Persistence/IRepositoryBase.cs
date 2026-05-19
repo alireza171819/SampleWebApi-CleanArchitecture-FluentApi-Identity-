@@ -16,7 +16,7 @@ public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
     /// <param name="entity">The entity to insert.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result of the operation.</returns>
-    Task<Result> InsertAsync(TEntity entity, CancellationToken cancellationToken);
+    Task<Result> Insert(TEntity entity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Updates an existing entity in the database.
@@ -24,7 +24,7 @@ public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
     /// <param name="entity">The entity with updated values.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result of the operation.</returns>
-    Task<Result> UpdateAsync(TEntity entity, CancellationToken cancellationToken);
+    Task<Result> Update(TEntity entity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes an entity by its primary key.
@@ -32,7 +32,7 @@ public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
     /// <param name="id">The primary key value.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result of the operation.</returns>
-    Task<Result> DeleteAsync(TPrimaryKey id, CancellationToken cancellationToken);
+    Task<Result> Delete(TPrimaryKey id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes the specified entity instance.
@@ -40,7 +40,7 @@ public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
     /// <param name="entity">The entity to delete.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result of the operation.</returns>
-    Task<Result> DeleteAsync(TEntity entity, CancellationToken cancellationToken);
+    Task<Result> Delete(TEntity entity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all entities.
@@ -55,6 +55,6 @@ public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
     /// <param name="id">The primary key (can be null).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result containing the entity if found, otherwise error.</returns>
-    Task<Result<TEntity>> FindByIdAsync(TPrimaryKey? id, CancellationToken cancellationToken);
+    Task<Result<TEntity>> FindById(TPrimaryKey? id, CancellationToken cancellationToken);
 
 }
