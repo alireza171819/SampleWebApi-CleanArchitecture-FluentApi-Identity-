@@ -42,14 +42,14 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     }
     #endregion
 
-    #region [- InsertAsync(TEntity entity) -]
+    #region [- Insert(TEntity entity) -]
     /// <summary>
     /// Inserts a new entity into the database.
     /// </summary>
     /// <param name="entity">The entity to insert.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result indicating success or failure.</returns>
-    public virtual async Task<Result> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
+    public virtual async Task<Result> Insert(TEntity entity, CancellationToken cancellationToken = default)
     {
         if (entity is null)
             return Result.BadRequest("Entity to insert cannot be null.");
@@ -71,14 +71,14 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     }
     #endregion
 
-    #region [- UpdateAsync(TEntity entity) -]
+    #region [- Update(TEntity entity) -]
     /// <summary>
     /// Updates an existing entity in the database.
     /// </summary>
     /// <param name="entity">The entity with updated values.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result indicating success or failure.</returns>
-    public virtual async Task<Result> UpdateAsync(TEntity entity, CancellationToken cancellationToken)
+    public virtual async Task<Result> Update(TEntity entity, CancellationToken cancellationToken)
     {
         if (entity == null)
             return Result.BadRequest("Entity to update cannot be null.");
@@ -100,14 +100,14 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     }
     #endregion
 
-    #region [- DeleteAsync(TPrimaryKey id) -]
+    #region [- Delete(TPrimaryKey id) -]
     /// <summary>
     /// Deletes an entity by its primary key.
     /// </summary>
     /// <param name="id">The primary key value.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result indicating success, or NotFound if entity does not exist.</returns>
-    public virtual async Task<Result> DeleteAsync(TPrimaryKey id, CancellationToken cancellationToken)
+    public virtual async Task<Result> Delete(TPrimaryKey id, CancellationToken cancellationToken)
     {
         if (id == null) return Result.BadRequest("Identifier is required.");
 
@@ -132,7 +132,7 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     }
     #endregion
 
-    #region [- DeleteAsync(TEntity entityToDelete) -]
+    #region [- Delete(TEntity entityToDelete) -]
 
     /// <summary>
     /// Deletes the specified entity instance.
@@ -140,7 +140,7 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     /// <param name="entityToDelete">The entity instance to delete.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result indicating success or failure.</returns>
-    public virtual async Task<Result> DeleteAsync(TEntity entityToDelete, CancellationToken cancellationToken)
+    public virtual async Task<Result> Delete(TEntity entityToDelete, CancellationToken cancellationToken)
     {
         if (entityToDelete == null)
             return Result.BadRequest("Entity to delete cannot be null.");
@@ -189,14 +189,14 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
     }
     #endregion
 
-    #region [- FindByIdAsync(TPrimaryKey id) -]
+    #region [- FindById(TPrimaryKey id) -]
     /// <summary>
     /// Finds an entity by its primary key.
     /// </summary>
     /// <param name="id">The primary key value (can be null).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result containing the entity if found, otherwise NotFound.</returns>
-    public virtual async Task<Result<TEntity>> FindByIdAsync(TPrimaryKey? id, CancellationToken cancellationToken)
+    public virtual async Task<Result<TEntity>> FindById(TPrimaryKey? id, CancellationToken cancellationToken)
     {
         if (id == null) return Result<TEntity>.BadRequest("Identifier is required.");
 

@@ -49,12 +49,12 @@ public class ProductRepository : RepositoryBase<AppDbContext, Product, int> , IP
     }
     #endregion
 
-    #region SelectByProductName(string productName)
+    #region Select(string productName)
 
     /// <summary>
     /// Retrieves products whose names contain the specified search term (case‑sensitive, depends on database collation).
     /// </summary>
-    /// <param name="name">The search term to look for within product names. Cannot be null or whitespace.</param>
+    /// <param name="productName">The search term to look for within product names. Cannot be null or whitespace.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>
     /// A result containing a list of matching products on success,
