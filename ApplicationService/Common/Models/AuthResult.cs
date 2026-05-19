@@ -2,16 +2,20 @@
 
 public class AuthResult
 {
-    public bool Success { get; set; }
-    public string? Token { get; set; }
-    public string? RefreshToken { get; set; }
-    public int? UserId { get; set; }
-    public string? Username { get; set; }
-    public string[] Errors { get; set; } = Array.Empty<string>();
-
-    public static AuthResult Ok(string token, string refreshToken, int userId, string username) => new()
+    public AuthResult()
     {
-        Success = true,
+        Errors = Array.Empty<string>();
+    }
+    public bool IsSuccess { get; private set; }
+    public string? Token { get; private set; }
+    public string? RefreshToken { get; private set; }
+    public Guid? UserId { get; private set; }
+    public string? Username { get; private set; }
+    public string[] Errors { get; private set; } 
+
+    public static AuthResult Ok(string token, string refreshToken, Guid userId, string username) => new()
+    {
+        IsSuccess = true,
         Token = token,
         RefreshToken = refreshToken,
         UserId = userId,
@@ -20,7 +24,7 @@ public class AuthResult
 
     public static AuthResult Fail(params string[] errors) => new()
     {
-        Success = false,
+        IsSuccess = false,
         Errors = errors
     };
 }

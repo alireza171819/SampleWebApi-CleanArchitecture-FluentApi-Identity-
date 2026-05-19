@@ -6,7 +6,7 @@ using Domain.Common;
 using Domain.Contracts.Persistence;
 using System.Net;
 
-namespace ApplicationService.Services.Products;
+namespace ApplicationService.Services.Orders;
 
 /// <summary>
 /// Application service for managing <see cref="Order"/> entities.
@@ -63,9 +63,9 @@ public class OrderService : IOrderService
             return Result.BadRequest("ShipAddress is required.");
 
         var order = new Order(createOrderDto.UserId, createOrderDto.OrderDate, createOrderDto.ShipedDate, createOrderDto.ShipAddress);
-        order.Uuid = createOrderDto.Uuid == Guid.Empty ? Guid.NewGuid() : createOrderDto.Uuid;
+        order.SetUid(createOrderDto.Uuid == Guid.Empty ? Guid.NewGuid() : createOrderDto.Uuid);
 
-        var result = await _orderRepository.InsertAsync(order, cancellationToken);
+        var result = await _orderRepository.Insert(order, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -108,10 +108,10 @@ public class OrderService : IOrderService
             return Result.BadRequest("ShippedDate invalid and cannot be before OrderDate.");
 
         Order order = new(updateOrderDto.UserId, updateOrderDto.OrderDate, updateOrderDto.ShipedDate, updateOrderDto.ShipAddress);
-        order.Id = updateOrderDto.Id;
-        order.Uuid = updateOrderDto.UUId == Guid.Empty ? Guid.NewGuid() : updateOrderDto.UUId;
+        order.SetId(updateOrderDto.Id);
+        order.SetUid(updateOrderDto.UUId == Guid.Empty ? Guid.NewGuid() : updateOrderDto.UUId);
 
-        var result = await _orderRepository.UpdateAsync(order, cancellationToken);
+        var result = await _orderRepository.Update(order, cancellationToken);
 
         if (result.IsFailure)
             return Result.Failure(result.ErrorMessage, result.StatusCode);
@@ -133,7 +133,7 @@ public class OrderService : IOrderService
         if (orderByIdDto is null || orderByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var findResult = await _orderRepository.FindByIdAsync(orderByIdDto.Id, cancellationToken);
+        var findResult = await _orderRepository.FindById(orderByIdDto.Id, cancellationToken);
 
         if (findResult.IsFailure)
             return Result.Failure(findResult.ErrorMessage, findResult.StatusCode);
@@ -145,7 +145,7 @@ public class OrderService : IOrderService
 
         order.Delete();
 
-        var updateResult = await _orderRepository.UpdateAsync(order, cancellationToken);
+        var updateResult = await _orderRepository.Update(order, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
@@ -173,7 +173,7 @@ public class OrderService : IOrderService
         if (orderByIdDto is null || orderByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var result = await _orderRepository.DeleteAsync(orderByIdDto.Id, cancellationToken);
+        var result = await _orderRepository.Delete(orderByIdDto.Id, cancellationToken);
 
         if (result.IsFailure && result.StatusCode == HttpStatusCode.NotFound)
             return Result.NotFound("Order for delete not found.");
@@ -203,7 +203,7 @@ public class OrderService : IOrderService
         if (orderByIdDto is null || orderByIdDto.Id <= 0)
             return Result<SingleOrderDto>.BadRequest("Model is null or invalid.");
 
-        var result = await _orderRepository.FindByIdAsync(orderByIdDto.Id, cancellationToken);
+        var result = await _orderRepository.FindById(orderByIdDto.Id, cancellationToken);
 
         if (result.IsFailure || result.Value is null)
             return Result<SingleOrderDto>.NotFound("Order not found."); 

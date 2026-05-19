@@ -3,31 +3,30 @@ using ApplicationService.Services.Contracts;
 using Domain.Aggregates.Products;
 using Domain.Common;
 using Domain.Contracts.Persistence;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ApplicationService.Services.Products;
+namespace ApplicationService.Services.Users;
 
-/// <summary>
-/// Application service for managing <see cref="Product"/> entities.
-/// Acts as a bridge between the repository layer (<see cref="IProductRepository"/>)
-/// and higher-level layers such as controllers or APIs.
-/// Provides business logic and DTO mapping for CRUD operations.
-/// </summary>
-public class ProductService : IProductService
+public class UserService : IUserService
 {
     #region Privet Fields
-    private readonly IProductRepository _productRepository;
+    private readonly IUserRepository _userRepository;
     #endregion
 
     #region Constructor
     /// <summary>
-    /// Creates a new instance of <see cref="ProductService"/>.
+    /// Creates a new instance of <see cref="UserService"/>.
     /// </summary>
-    /// <param name="productRepository">Repository used for Product persistence operations.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="productRepository"/> is null.</exception>
-    public ProductService(IProductRepository productRepository)
+    /// <param name="userRepository">Repository used for User persistence operations.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="userRepository"/> is null.</exception>
+    public UserService(IUserRepository userRepository)
     {
-        _productRepository = productRepository;
+        _userRepository = userRepository;
     }
     #endregion
 
