@@ -10,14 +10,29 @@ namespace Identity.Services;
 
 public class JwtService : IJwtService
 {
+    #region Filds
+
     private readonly IConfiguration _configuration;
 
+    #endregion
+
+    #region Constructor
     public JwtService(IConfiguration configuration)
     {
         _configuration = configuration;
     }
 
-    public string GenerateToken(int userId, string username)
+    #endregion
+
+    #region GenerateToken(Guid userId, string username)
+
+    /// <summary>
+    /// Generates a new access token for the specified user.
+    /// </summary>
+    /// <param name="userId">The unique identifier of the user (typically from the user domain).</param>
+    /// <param name="username">The username of the authenticated user.</param>
+    /// <returns>A signed JWT access token as a string.</returns>
+    public string GenerateToken(Guid userId, string username)
     {
         var claims = new[]
         {
@@ -39,7 +54,14 @@ public class JwtService : IJwtService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+    #endregion
 
+    #region GenerateRefreshToken()
+
+    /// <summary>
+    /// Generates a cryptographically secure random refresh token.
+    /// </summary>
+    /// <returns>A base64-encoded refresh token string.</returns>
     public string GenerateRefreshToken()
     {
         var randomNumber = new byte[32];
@@ -47,7 +69,17 @@ public class JwtService : IJwtService
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
     }
+    #endregion
 
+    #region GetPrincipalFromExpiredToken(string token)
+    /// <summary>
+    /// Retrieves the <see cref="ClaimsPrincipal"/> from an expired access token without validation of its expiration.
+    /// </summary>
+    /// <param name="token">The expired JWT access token.</param>
+    /// <returns>
+    /// A <see cref="ClaimsPrincipal"/> containing the claims from the token if the signature is valid;
+    /// otherwise, <c>null</c>.
+    /// </returns>
     public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters
@@ -75,4 +107,5 @@ public class JwtService : IJwtService
             return null;
         }
     }
+    #endregion
 }

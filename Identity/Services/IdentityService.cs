@@ -22,8 +22,18 @@ public class IdentityService : IIdentityService
         _signInManager = signInManager;
         _jwtService = jwtService;
     }
-
-    public async Task<AuthResult> RegisterAsync(string username, string password, string email)
+    
+    /// <summary>
+    /// Registers a new user with the specified credentials.
+    /// </summary>
+    /// <param name="username">The unique username for the new user.</param>
+    /// <param name="password">The password for the new user.</param>
+    /// <param name="email">The email address of the new user.</param>
+    /// <returns>
+    /// An <see cref="AuthResult"/> containing the authentication tokens (access and refresh)
+    /// and any validation errors or failure information.
+    /// </returns>
+    public async Task<AuthResult> Register(string username, string password, string email)
     {
         var existingUser = await _userManager.FindByNameAsync(username);
         if (existingUser != null)
@@ -49,19 +59,33 @@ public class IdentityService : IIdentityService
             return AuthResult.Fail(errors);
         }
 
-        await _userManager.AddToRoleAsync(user, "User");
+        var roleResult = await _userManager.AddToRoleAsync(user, "Customer");
+        if (!roleResult.Succeeded)
+            return AuthResult.Fail("Failed to save refresh token");
 
         var token = _jwtService.GenerateToken(user.Id, user.UserName!);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return AuthResult.Fail("Failed to save refresh token");
 
         return AuthResult.Ok(token, refreshToken, user.Id, user.UserName!);
     }
 
-    public async Task<AuthResult> LoginAsync(string username, string password) 
+    /// <summary>
+    /// Authenticates a user and returns access and refresh tokens.
+    /// </summary>
+    /// <param name="username">The username of the user.</param>
+    /// <param name="password">The password of the user.</param>
+    /// <returns>
+    /// An <see cref="AuthResult"/> containing the tokens on success,
+    /// or failure information (e.g., invalid credentials) on error.
+    /// </returns>
+    public async Task<AuthResult> Login(string username, string password) 
     {
         var user = await _userManager.FindByNameAsync(username);
         if (user == null)
@@ -83,12 +107,23 @@ public class IdentityService : IIdentityService
 
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return AuthResult.Fail("Failed to save refresh token");
 
         return AuthResult.Ok(token, refreshToken, user.Id, user.UserName!);
     }
 
-    public async Task<AuthResult> RefreshTokenAsync(string refreshToken)
+    /// <summary>
+    /// Generates a new access token using a valid refresh token.
+    /// </summary>
+    /// <param name="refreshToken">The refresh token obtained during login or previous refresh.</param>
+    /// <returns>
+    /// An <see cref="AuthResult"/> containing a new access token (and possibly a new refresh token)
+    /// if the refresh token is valid; otherwise, failure information.
+    /// </returns>
+    public async Task<AuthResult> RefreshToken(string refreshToken)
     {
         var user = await _userManager.Users
             .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
@@ -101,33 +136,33 @@ public class IdentityService : IIdentityService
 
         user.RefreshToken = newRefreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return AuthResult.Fail("Failed to save refresh token");
 
         return AuthResult.Ok(newToken, newRefreshToken, user.Id, user.UserName!);
     }
 
-    public async Task<bool> LogoutAsync(int userId)
+    /// <summary>
+    /// Logs out the user by invalidating the refresh token or session.
+    /// </summary>
+    /// <param name="userId">The identifier of the user to log out.</param>
+    /// <returns>
+    /// <c>true</c> if logout was successful; otherwise <c>false</c> (e.g., user not found or already logged out).
+    /// </returns>
+    public async Task<bool> Logout(Guid userId)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null) return false;
 
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;
-        await _userManager.UpdateAsync(user);
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return false;
 
         return true;
     }
-
-    //public async Task<User?> GetUserByIdAsync(int userId)
-    //{
-    //    var appUser = await _userManager.FindByIdAsync(userId.ToString());
-    //    if (appUser == null) return null;
-
-    //    return new User(appUser.UserName!, appUser.Email!, appUser.IsActive)
-    //    {
-    //        Id = appUser.Id,
-    //        RefreshToken = appUser.RefreshToken,
-    //        RefreshTokenExpiry = appUser.RefreshTokenExpiry
-    //    };
-    //}
 }
