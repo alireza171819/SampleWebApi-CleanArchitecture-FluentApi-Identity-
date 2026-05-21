@@ -165,4 +165,32 @@ public class IdentityService : IIdentityService
 
         return true;
     }
+
+    public async Task<bool> DeleteUser(Guid userId)
+    {
+        if (userId == Guid.Empty) return false;
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+
+        if (user == null) return false;
+
+        var deleteResult = await _userManager.DeleteAsync(user);
+
+        if (!deleteResult.Succeeded) return false;
+
+        return true;
+    }
+
+    public async Task<bool> SoftDeleteUser(Guid userId)
+    {
+        if (userId == Guid.Empty) return false;
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+
+        if (user == null) return false;
+
+        user.IsDelete = true;
+        var deleteResult = await _userManager.UpdateAsync(user);
+        return true;
+    }
 }

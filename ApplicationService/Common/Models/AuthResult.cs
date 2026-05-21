@@ -7,6 +7,7 @@ public class AuthResult
         Errors = Array.Empty<string>();
     }
     public bool IsSuccess { get; private set; }
+    public bool IsFailure => !IsSuccess;
     public string? Token { get; private set; }
     public string? RefreshToken { get; private set; }
     public Guid? UserId { get; private set; }

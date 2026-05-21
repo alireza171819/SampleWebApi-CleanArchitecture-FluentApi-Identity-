@@ -45,4 +45,18 @@ public interface IIdentityService
     /// <c>true</c> if logout was successful; otherwise <c>false</c> (e.g., user not found or already logged out).
     /// </returns>
     Task<bool> Logout(Guid userId);
+
+    /// <summary>
+    /// Permanently deletes a user.
+    /// </summary>
+    /// <param name="userId">User identifier.</param>
+    /// <returns>True if deleted successfully, otherwise false.</returns>
+    Task<bool> DeleteUser(Guid userId);
+
+    /// <summary>
+    /// Soft deletes a user (marks as deleted without removing the record).
+    /// </summary>
+    /// <param name="userId">User identifier.</param>
+    /// <returns>True if soft deleted successfully, otherwise false.</returns>
+    Task<bool> SoftDeleteUser(Guid userId);
 }

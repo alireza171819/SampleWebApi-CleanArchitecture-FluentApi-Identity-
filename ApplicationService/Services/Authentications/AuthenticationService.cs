@@ -5,9 +5,9 @@ using Domain.Common;
 using Domain.Contracts.Persistence;
 using System.Net;
 
-namespace ApplicationService.Services.Authorizations;
+namespace ApplicationService.Services.Authentications;
 
-public class AuthorizationService
+public class AuthenticationService
 {
     #region Privet Fields
     private readonly IIdentityService _identityService;
@@ -16,7 +16,7 @@ public class AuthorizationService
 
     #region Constructor
 
-    public AuthorizationService(IIdentityService identityService, IUserRepository userRepository)
+    public AuthenticationService(IIdentityService identityService, IUserRepository userRepository)
     {
         _identityService = identityService;
         _userRepository = userRepository;
@@ -24,67 +24,66 @@ public class AuthorizationService
 
     #endregion
 
-    #region RegisterAsync
+    #region Register(string username, string password, string email)
 
     /// <summary>
     /// Registers a new user in both Identity and Domain databases.
     /// </summary>
-    public async Task<Result<AuthResult>> RegisterAsync(string username, string password, string email, CancellationToken cancellationToken)
+    public async Task<Result> Register(string username, string password, string email, CancellationToken cancellationToken)
     {
-        var authResult = await _identityService.RegisterAsync(username, password, email);
-        if (authResult.IsFailure) 
-            return Result<AuthResult>.Failure("Registration failed" ,HttpStatusCode.BadRequest);
+        var authResult = await _identityService.Register(username, password, email);
+        if (authResult.IsFailure)
+            return Result.Failure("Registration failed.", HttpStatusCode.BadRequest);
 
         var domainUser = new User(username, email, isActive: true);
         domainUser.SetUid(Guid.Parse(authResult.UserId!.Value.ToString())); // Set the Uuid to match Identity Id
 
-        var addResult = await _userRepository.Insert(domainUser, cancellationToken);
-        if (!addResult.IsSuccess)
+        var insertResult = await _userRepository.Insert(domainUser, cancellationToken);
+        if (insertResult.IsFailure)
         {
             // Compensation: rollback Identity user
-            await _identityService.LogoutAsync(authResult.UserId!.Value);
-            // Note: You might need a DeleteUserAsync in IIdentityService, but for simplicity we just clear refresh token.
-            return Result<AuthResult>.Failure(
+            await _identityService.Logout(authResult.UserId!.Value);
+            await _identityService.DeleteUser();
+            // Note: You might need a DeleteUser in IIdentityService, but for simplicity we just clear refresh token.
+            return Result.Failure(
                 "User profile could not be created. Please contact support.",
                 HttpStatusCode.InternalServerError);
         }
 
-        return Result<AuthResult>.Success(authResult);
+        return Result.Success();
     }
     #endregion
 
-    #region LoginAsync
+    #region Login(string username, string password)
+
     /// <summary>
     /// Authenticates user and returns tokens. Also syncs domain user state if needed.
     /// </summary>
-    public async Task<Result<AuthResult>> LoginAsync(
-        string username,
-        string password,
-        CancellationToken cancellationToken)
+    public async Task<Result> Login(string username, string password, CancellationToken cancellationToken)
     {
-        var authResult = await _identityService.LoginAsync(username, password, cancellationToken);
-        if (!authResult.Succeeded)
-            return Result<AuthResult>.Failure(
+        var authResult = await _identityService.Login(username, password);
+        if (authResult.IsFailure)
+            return Result.Failure(
                 authResult.Errors?.FirstOrDefault() ?? "Invalid login attempt",
                 HttpStatusCode.Unauthorized);
 
         // Optional: Sync domain user state (e.g., reactivate if deactivated)
         var userId = authResult.UserId!.Value;
-        var domainUser = await _userRepository.GetByUuidAsync(Guid.Parse(userId.ToString()), cancellationToken);
-        if (domainUser == null)
+        var domainResult = await _userRepository.FindByUuid(Guid.Parse(userId.ToString()), cancellationToken);
+        if (domainResult == null)
         {
             // Domain user missing – maybe create it now? Or return error.
-            return Result<AuthResult>.Failure("User profile not found", HttpStatusCode.NotFound);
+            return Result.Failure("User profile not found", HttpStatusCode.NotFound);
         }
 
-        if (!domainUser.IsActive)
+        if (!domainResult.Value.IsActive)
         {
             // If domain user is deactivated, you might want to log out the identity user.
-            await _identityService.LogoutAsync(userId, cancellationToken);
-            return Result<AuthResult>.Failure("Account is deactivated", HttpStatusCode.Forbidden);
+            await _identityService.Logout(userId);
+            return Result.Failure("Account is deactivated", HttpStatusCode.Forbidden);
         }
 
-        return Result<AuthResult>.Success(authResult);
+        return Result.Success();
     }
     #endregion
 
@@ -148,5 +147,4 @@ public class AuthorizationService
         return Result<CurrentUserDto>.Success(dto);
     }
     #endregion
-
 }

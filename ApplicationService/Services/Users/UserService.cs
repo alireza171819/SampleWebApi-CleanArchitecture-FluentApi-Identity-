@@ -58,7 +58,7 @@ public class UserService : IUserService
         var product = new Product(createProductDto.ProductName, createProductDto.UnitPrice, createProductDto.UnitsInStock);
         product.SetUid(createProductDto.UUId == Guid.Empty ? Guid.NewGuid() : createProductDto.UUId);
 
-        var result = await _productRepository.Insert(product, cancellationToken);
+        var result = await _userRepository.Insert(product, cancellationToken);
 
         if (result.IsFailure)
         {
