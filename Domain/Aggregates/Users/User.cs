@@ -8,15 +8,13 @@ public class User : SoftDeletableEntity
 {
     private User() { } // for EF
 
-    public User(string userName, string email, bool isActive)
+    public User(string userName, string email)
     {
         SetUserName(userName);
         SetEmail(email);
-        IsActive = isActive;
     }
     public string Username { get; private set; }
     public string Email { get; private set; } 
-    public bool IsActive { get; private set; } 
 
     public string? RefreshToken { get; private set; }
     public DateTime? RefreshTokenExpiry { get; private set; }
@@ -40,20 +38,6 @@ public class User : SoftDeletableEntity
             throw new DomainException("Invalid email format.");
 
         Email = email;
-        Touch();
-    }
-
-    public void Activate()
-    {
-        if (IsActive) return;
-        IsActive = true;
-        Touch();
-    }
-
-    public void Deactivate()
-    {
-        if (!IsActive) return;
-        IsActive = false;
         Touch();
     }
 
