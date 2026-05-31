@@ -1,7 +1,7 @@
 ﻿
 namespace ApplicationService.Dtos.Orders;
 
-public class CreateOrderDto
+public class OrderCreateDto
 {
     public Guid Uuid { get; set; }
     public int UserId { get; set; }
@@ -9,5 +9,5 @@ public class CreateOrderDto
     public DateTime ShipedDate { get; set; }
     public string? ShipAddress { get; set; }
 
-    public List<SingleOrderDetailDto>? OrderDetailsDtos { get; set; }
+    public List<OrderDetailSingleDto>? OrderDetailsDtos { get; set; }
 }

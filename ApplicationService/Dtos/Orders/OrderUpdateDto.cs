@@ -1,7 +1,7 @@
 ﻿
 namespace ApplicationService.Dtos.Orders;
 
-public class UpdateOrderDto
+public class OrderUpdateDto
 {
     public int Id { get; set; }
     public Guid UUId { get; set; }
@@ -10,5 +10,5 @@ public class UpdateOrderDto
     public DateTime ShipedDate { get; set; }
     public string ShipAddress { get; set; }
 
-    public List<SingleOrderDetailDto> SingleOrderDetailDtos { get; set; }
+    public List<OrderDetailSingleDto> SingleOrderDetailDtos { get; set; }
 }

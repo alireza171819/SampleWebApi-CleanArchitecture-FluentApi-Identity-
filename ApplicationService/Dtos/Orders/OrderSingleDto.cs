@@ -1,7 +1,7 @@
 ﻿
 namespace ApplicationService.Dtos.Orders;
 
-public class SingleOrderDto
+public class OrderSingleDto
 {
     public int Id { get; set; }
     public Guid Uuid { get; set; }
