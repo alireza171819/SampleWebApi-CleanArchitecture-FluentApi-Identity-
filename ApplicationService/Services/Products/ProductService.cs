@@ -31,11 +31,11 @@ public class ProductService : IProductService
     }
     #endregion
 
-    #region Create(CreateProductDto createProductDto)
+    #region Create(ProductCreateDto productCreateDto)
     /// <summary>
     /// Creates a new product.
     /// </summary>
-    /// <param name="createProductDto">Data transfer object containing required fields for creating an product.</param>
+    /// <param name="productCreateDto">Data transfer object containing required fields for creating an product.</param>
     /// <param name="cancellationToken">Token to cancel the operation if needed (e.g., due to client disconnection or timeout).</param>
     /// <returns>
     /// A standardized result containing:
@@ -44,20 +44,20 @@ public class ProductService : IProductService
     /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Create(CreateProductDto createProductDto, CancellationToken cancellationToken)
+    public async Task<Result> Create(ProductCreateDto productCreateDto, CancellationToken cancellationToken)
     {
-        if (createProductDto is null)
+        if (productCreateDto is null)
             return Result.BadRequest("Model is null.");
 
-        if (string.IsNullOrWhiteSpace(createProductDto.ProductName))
+        if (string.IsNullOrWhiteSpace(productCreateDto.ProductName))
             return Result.BadRequest("Product name is required.");
-        if (createProductDto.UnitPrice < 0)
+        if (productCreateDto.UnitPrice < 0)
             return Result.BadRequest("Unit price cannot be negative.");
-        if (createProductDto.UnitsInStock < 0)
+        if (productCreateDto.UnitsInStock < 0)
             return Result.BadRequest("Units in stock cannot be negative.");
 
-        var product = new Product(createProductDto.ProductName, createProductDto.UnitPrice, createProductDto.UnitsInStock);
-        product.SetUid(createProductDto.UUId == Guid.Empty ? Guid.NewGuid() : createProductDto.UUId);
+        var product = new Product(productCreateDto.ProductName, productCreateDto.UnitPrice, productCreateDto.UnitsInStock);
+        product.SetUid(productCreateDto.UUId == Guid.Empty ? Guid.NewGuid() : productCreateDto.UUId);
 
         var result = await _productRepository.Insert(product, cancellationToken);
 
@@ -75,10 +75,10 @@ public class ProductService : IProductService
 
     #endregion
 
-    #region Update(UpdateProductDto updateProductDto)
+    #region Update(ProductUpdateDto productUpdateDto)
     /// <summary>
     /// Update an existing product.
-    /// <param name="updateProductDto">DTO containing the product ID and fields to update .</param>
+    /// <param name="productUpdateDto">DTO containing the product ID and fields to update .</param>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
     /// A standardized result containing:
@@ -87,26 +87,26 @@ public class ProductService : IProductService
     /// <item><description><c>false</c> if the product with the specified ID does not exist (logical failure).</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Update(UpdateProductDto updateProductDto, CancellationToken cancellationToken)
+    public async Task<Result> Update(ProductUpdateDto productUpdateDto, CancellationToken cancellationToken)
     {
-        if (updateProductDto is null)
+        if (productUpdateDto is null)
             return Result.BadRequest("Model is null.");
 
-        if (updateProductDto.Id <= 0)
+        if (productUpdateDto.Id <= 0)
             return Result.BadRequest("Id is required.");
 
-        if (string.IsNullOrWhiteSpace(updateProductDto.ProductName))
+        if (string.IsNullOrWhiteSpace(productUpdateDto.ProductName))
             return Result.BadRequest("Product name is required.");
 
-        if (updateProductDto.UnitPrice < 0)
+        if (productUpdateDto.UnitPrice < 0)
             return Result.BadRequest("Unit price cannot be negative.");
 
-        if (updateProductDto.UnitsInStock < 0)
+        if (productUpdateDto.UnitsInStock < 0)
             return Result.BadRequest("Units in stock cannot be negative.");
 
-        Product product = new(updateProductDto.ProductName, updateProductDto.UnitPrice, updateProductDto.UnitsInStock);
-        product.SetId(updateProductDto.Id);
-        product.SetUid(updateProductDto.UUId == Guid.Empty ? Guid.NewGuid() : updateProductDto.UUId);
+        Product product = new(productUpdateDto.ProductName, productUpdateDto.UnitPrice, productUpdateDto.UnitsInStock);
+        product.SetId(productUpdateDto.Id);
+        product.SetUid(productUpdateDto.UUId == Guid.Empty ? Guid.NewGuid() : productUpdateDto.UUId);
 
         var updateResult = await _productRepository.Update(product, cancellationToken);
 
@@ -194,22 +194,22 @@ public class ProductService : IProductService
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
-    /// <item><description>The <see cref="SingleProductDto"/> if the product exists.</description></item>
+    /// <item><description>The <see cref="ProductSingleDto"/> if the product exists.</description></item>
     /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result<SingleProductDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result<ProductSingleDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
     {
         if (productByIdDto is null || productByIdDto.Id <= 0)
-            return Result<SingleProductDto>.BadRequest("Model is null or invalid.");
+            return Result<ProductSingleDto>.BadRequest("Model is null or invalid.");
 
         var result = await _productRepository.FindById(productByIdDto.Id, cancellationToken);
 
         if (result.IsFailure)
-            return Result<SingleProductDto>.Failure("Product not found.", result.StatusCode);
+            return Result<ProductSingleDto>.Failure("Product not found.", result.StatusCode);
 
         var product = result.Value;
-        var productDto = new SingleProductDto
+        var productDto = new ProductSingleDto
         {
             Id = product.Id,
             ProductName = product.ProductName,
@@ -218,7 +218,7 @@ public class ProductService : IProductService
             Uuid = product.Uuid
         };
 
-        return Result<SingleProductDto>.Success(productDto);
+        return Result<ProductSingleDto>.Success(productDto);
     }
 
     #endregion
@@ -241,9 +241,9 @@ public class ProductService : IProductService
             return Result<ListProductDto>.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
 
         if (result.Value == null || !result.Value.Any())
-            return Result<ListProductDto>.Success(new ListProductDto { ProductDtos = new List<SingleProductDto>() });
+            return Result<ListProductDto>.Success(new ListProductDto { ProductDtos = new List<ProductSingleDto>() });
 
-        var productDtos = result.Value.Select(product => new SingleProductDto
+        var productDtos = result.Value.Select(product => new ProductSingleDto
         {
             Id = product.Id,
             ProductName = product.ProductName,

@@ -1,14 +1,9 @@
-﻿using ApplicationService.Dtos.Products;
+﻿using ApplicationService.Dtos.Users;
 using ApplicationService.Services.Contracts;
-using Domain.Aggregates.Products;
+using Domain.Aggregates.Users;
 using Domain.Common;
 using Domain.Contracts.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ApplicationService.Services.Users;
 
@@ -30,35 +25,31 @@ public class UserService : IUserService
     }
     #endregion
 
-    #region Create(CreateProductDto createProductDto)
+    #region Create(UserCreateDto userCreateDto)
     /// <summary>
-    /// Creates a new product.
+    /// Creates a new user.
     /// </summary>
-    /// <param name="createProductDto">Data transfer object containing required fields for creating an product.</param>
+    /// <param name="userCreateDto">Data transfer object containing required fields for creating an user.</param>
     /// <param name="cancellationToken">Token to cancel the operation if needed (e.g., due to client disconnection or timeout).</param>
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
-    /// <item><description><c>true</c> if the product was successfully created and persisted.</description></item>
+    /// <item><description><c>true</c> if the user was successfully created and persisted.</description></item>
     /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Create(CreateProductDto createProductDto, CancellationToken cancellationToken)
+    public async Task<Result> Create(UserCreateDto userCreateDto, CancellationToken cancellationToken)
     {
-        if (createProductDto is null)
+        if (userCreateDto is null)
             return Result.BadRequest("Model is null.");
 
-        if (string.IsNullOrWhiteSpace(createProductDto.ProductName))
-            return Result.BadRequest("Product name is required.");
-        if (createProductDto.UnitPrice < 0)
-            return Result.BadRequest("Unit price cannot be negative.");
-        if (createProductDto.UnitsInStock < 0)
-            return Result.BadRequest("Units in stock cannot be negative.");
+        if (string.IsNullOrWhiteSpace(userCreateDto.Username))
+            return Result.BadRequest("User name is required.");
 
-        var product = new Product(createProductDto.ProductName, createProductDto.UnitPrice, createProductDto.UnitsInStock);
-        product.SetUid(createProductDto.UUId == Guid.Empty ? Guid.NewGuid() : createProductDto.UUId);
+        var user = new User(userCreateDto.Username, userCreateDto.Email);
+        user.SetUid(userCreateDto.Uuid == Guid.Empty ? Guid.NewGuid() : userCreateDto.Uuid);
 
-        var result = await _userRepository.Insert(product, cancellationToken);
+        var result = await _userRepository.Insert(user, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -74,40 +65,34 @@ public class UserService : IUserService
 
     #endregion
 
-    #region Update(UpdateProductDto updateProductDto)
+    #region Update(UserUpdateDto userUpdateDto)
     /// <summary>
-    /// Update an existing product.
-    /// <param name="updateProductDto">DTO containing the product ID and fields to update .</param>
+    /// Update an existing user.
+    /// <param name="userUpdateDto">DTO containing the user ID and fields to update .</param>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
-    /// <item><description><c>true</c> if the product was found and successfully updated.</description></item>
-    /// <item><description><c>false</c> if the product with the specified ID does not exist (logical failure).</description></item>
+    /// <item><description><c>true</c> if the user was found and successfully updated.</description></item>
+    /// <item><description><c>false</c> if the user with the specified ID does not exist (logical failure).</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Update(UpdateProductDto updateProductDto, CancellationToken cancellationToken)
+    public async Task<Result> Update(UserUpdateDto userUpdateDto, CancellationToken cancellationToken)
     {
-        if (updateProductDto is null)
+        if (userUpdateDto is null)
             return Result.BadRequest("Model is null.");
 
-        if (updateProductDto.Id <= 0)
+        if (userUpdateDto.Id <= 0)
             return Result.BadRequest("Id is required.");
 
-        if (string.IsNullOrWhiteSpace(updateProductDto.ProductName))
-            return Result.BadRequest("Product name is required.");
+        if (string.IsNullOrWhiteSpace(userUpdateDto.Username))
+            return Result.BadRequest("User name is required.");
 
-        if (updateProductDto.UnitPrice < 0)
-            return Result.BadRequest("Unit price cannot be negative.");
+        User user = new(userUpdateDto.Username, userUpdateDto.Email);
+        user.SetId(userUpdateDto.Id);
+        user.SetUid(userUpdateDto.Uuid == Guid.Empty ? Guid.NewGuid() : userUpdateDto.Uuid);
 
-        if (updateProductDto.UnitsInStock < 0)
-            return Result.BadRequest("Units in stock cannot be negative.");
-
-        Product product = new(updateProductDto.ProductName, updateProductDto.UnitPrice, updateProductDto.UnitsInStock);
-        product.SetId(updateProductDto.Id);
-        product.SetUid(updateProductDto.UUId == Guid.Empty ? Guid.NewGuid() : updateProductDto.UUId);
-
-        var updateResult = await _productRepository.Update(product, cancellationToken);
+        var updateResult = await _userRepository.Update(user, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
@@ -117,32 +102,32 @@ public class UserService : IUserService
 
     #endregion
 
-    #region SoftDelete(ProductByIdDto productByIdDto)
+    #region SoftDelete(UserByIdDto userByIdDto)
 
     /// <summary>
-    /// Soft deletes a product by setting IsDeleted to true.
+    /// Soft deletes a user by setting IsDeleted to true.
     /// </summary>
-    /// <param name="productByIdDto">Product identifier.</param>
+    /// <param name="userByIdDto">User identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success result or appropriate error.</returns>
-    public async Task<Result> SoftDeleteAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result> SoftDeleteAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
-        if (productByIdDto is null || productByIdDto.Id <= 0)
+        if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var findResult = await _productRepository.FindById(productByIdDto.Id, cancellationToken);
+        var findResult = await _userRepository.FindById(userByIdDto.Id, cancellationToken);
 
         if (findResult.IsFailure)
             return Result.Failure(findResult.ErrorMessage, findResult.StatusCode);
 
-        var product = findResult.Value;
+        var user = findResult.Value;
 
-        if (product.IsDeleted)
+        if (user.IsDeleted)
             return Result.Failure("Product has already been deleted.", HttpStatusCode.Conflict);
 
-        product.Delete();
+        user.Delete();
 
-        var updateResult = await _productRepository.Update(product, cancellationToken);
+        var updateResult = await _userRepository.Update(user, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
@@ -152,25 +137,25 @@ public class UserService : IUserService
 
     #endregion
 
-    #region Delete(ProductByIdDto deleteProductDto)
+    #region Delete(UserByIdDto userByIdDto)
     /// <summary>
-    /// Deletes an product by its identifier.
+    /// Deletes an user by its identifier.
     /// </summary>
-    /// <param name="productByIdDto">DTO containing the ID of the product to delete.</param>
+    /// <param name="userByIdDto">DTO containing the ID of the user to delete.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
-    /// <item><description><c>true</c> if the product was found and deleted successfully.</description></item>
-    /// <item><description><c>false</c> if no product with the given ID exists.</description></item>
+    /// <item><description><c>true</c> if the user was found and deleted successfully.</description></item>
+    /// <item><description><c>false</c> if no user with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Delete(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result> Delete(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
-        if (productByIdDto is null || productByIdDto.Id <= 0)
+        if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var result = await _productRepository.Delete(productByIdDto.Id, cancellationToken);
+        var result = await _userRepository.Delete(userByIdDto.Id, cancellationToken);
 
         if (!result.IsSuccess && result.StatusCode == HttpStatusCode.NotFound)
             return Result.NotFound("Not found product for delete.");
@@ -183,76 +168,74 @@ public class UserService : IUserService
 
     #endregion
 
-    #region GetById(ProductByIdDto productByIdDto)
+    #region GetById(UserByIdDto userByIdDto)
 
     /// <summary>
-    /// Retrieves a single product by its unique identifier.
+    /// Retrieves a single user by its unique identifier.
     /// </summary>
-    /// <param name="productByIdDto">DTO containing the product ID to fetch.</param>
+    /// <param name="userByIdDto">DTO containing the user ID to fetch.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
-    /// <item><description>The <see cref="SingleProductDto"/> if the product exists.</description></item>
-    /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
+    /// <item><description>The <see cref="UserSingleDto"/> if the user exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result<SingleProductDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result<UserSingleDto>> GetById(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
-        if (productByIdDto is null || productByIdDto.Id <= 0)
-            return Result<SingleProductDto>.BadRequest("Model is null or invalid.");
+        if (userByIdDto is null || userByIdDto.Id <= 0)
+            return Result<UserSingleDto>.BadRequest("Model is null or invalid.");
 
-        var result = await _productRepository.FindById(productByIdDto.Id, cancellationToken);
+        var result = await _userRepository.FindById(userByIdDto.Id, cancellationToken);
 
         if (result.IsFailure)
-            return Result<SingleProductDto>.Failure("Product not found.", result.StatusCode);
+            return Result<UserSingleDto>.Failure("User not found.", result.StatusCode);
 
-        var product = result.Value;
-        var productDto = new SingleProductDto
+        var user = result.Value;
+        var userDto = new UserSingleDto
         {
-            Id = product.Id,
-            ProductName = product.ProductName,
-            UnitsInStock = product.UnitsInStock,
-            UnitPrice = product.UnitPrice,
-            Uuid = product.Uuid
+            Id = user.Id,
+            Uuid = user.Uuid,
+            Username = user.Username,
+            Email = user.Email
         };
 
-        return Result<SingleProductDto>.Success(productDto);
+        return Result<UserSingleDto>.Success(userDto);
     }
 
     #endregion
 
     #region GetAll()
     /// <summary>
-    /// Retrieves all products from the data source.
+    /// Retrieves all users from the data source.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
-    /// A standardized result containing a <see cref="ListProductDto"/> with all products.
-    /// If no products exist, returns a successful result with an empty list (not NotFound).
+    /// A standardized result containing a <see cref="UserListDto"/> with all users.
+    /// If no users exist, returns a successful result with an empty list (not NotFound).
     /// In case of a database or infrastructure error, returns a failure result.
     /// </returns>
-    public async Task<Result<ListProductDto>> GetAll(CancellationToken cancellationToken)
+    public async Task<Result<UserListDto>> GetAll(CancellationToken cancellationToken)
     {
-        var result = await _productRepository.Select(cancellationToken);
+        var result = await _userRepository.Select(cancellationToken);
 
         if (result.IsFailure)
-            return Result<ListProductDto>.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result<UserListDto>.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
 
         if (result.Value == null || !result.Value.Any())
-            return Result<ListProductDto>.Success(new ListProductDto { ProductDtos = new List<SingleProductDto>() });
+            return Result<UserListDto>.Success(new UserListDto { SingleUserDtos = new List<UserSingleDto>() });
 
-        var productDtos = result.Value.Select(product => new SingleProductDto
+        var userDtos = result.Value.Select(user => new UserSingleDto
         {
-            Id = product.Id,
-            ProductName = product.ProductName,
-            UnitsInStock = product.UnitsInStock,
-            UnitPrice = product.UnitPrice,
-            Uuid = product.Uuid
+            Id = user.Id,
+            Uuid = user.Uuid,
+            Username= user.Username,
+            Email = user.Email
         }).ToList();
 
-        var listProductDto = new ListProductDto { ProductDtos = productDtos };
-        return Result<ListProductDto>.Success(listProductDto);
+        var listUserDto = new UserListDto { SingleUserDtos = userDtos };
+        return Result<UserListDto>.Success(listUserDto);
     }
 
     #endregion

@@ -16,7 +16,7 @@ public interface IProductService
     /// <summary>
     /// Creates a new product.
     /// </summary>
-    /// <param name="createProductDto">DTO containing product data .</param>
+    /// <param name="productCreateDto">DTO containing product data .</param>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., client disconnect or timeout).</param>
     /// <returns>
     /// A standardized result containing:
@@ -25,12 +25,12 @@ public interface IProductService
     /// <item><description><c>false</c> if a logical conflict occurs (e.g., duplicate product code). Validation errors return <c>BadRequest</c>.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Create(CreateProductDto createProductDto, CancellationToken cancellationToken);
+    Task<Result> Create(ProductCreateDto productCreateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Replaces an existing product with the provided data.
     /// </summary>
-    /// <param name="updateProductDto">DTO containing product ID and all updatable fields.</param>
+    /// <param name="productUpdateDto">DTO containing product ID and all updatable fields.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>
     /// A standardized result containing:
@@ -39,7 +39,7 @@ public interface IProductService
     /// <item><description><c>false</c> if no product with the specified ID exists (logical failure).</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Update(UpdateProductDto updateProductDto, CancellationToken cancellationToken);
+    Task<Result> Update(ProductUpdateDto productUpdateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes a product by its identifier.
@@ -74,9 +74,9 @@ public interface IProductService
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
-    /// <item><description>The <see cref="SingleProductDto"/> if the product exists.</description></item>
+    /// <item><description>The <see cref="ProductSingleDto"/> if the product exists.</description></item>
     /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
     /// </list>
     /// </returns>
-    Task<Result<SingleProductDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
+    Task<Result<ProductSingleDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 }
