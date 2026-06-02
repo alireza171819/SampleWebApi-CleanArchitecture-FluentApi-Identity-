@@ -5,11 +5,10 @@ using ApplicationService.Services.Contracts;
 using Domain.Aggregates.Users;
 using Domain.Common;
 using Domain.Contracts.Persistence;
-using System.Net;
 
 namespace ApplicationService.Services.Authentications;
 
-public class AuthenticationService
+public class AuthenticationService : IAuthenticationService
 {
     #region Privet Fields
     private readonly IIdentityService _identityService;
@@ -33,23 +32,23 @@ public class AuthenticationService
     /// </summary>
     public async Task<Result> Register(UserRegisterDto userRegisterDto, CancellationToken cancellationToken)
     {
-        var authResult = await _identityService.Register(userRegisterDto.Username, userRegisterDto.Password, userRegisterDto.Email);
+        var authResult = await _identityService.Register(userRegisterDto);
         if (authResult.IsFailure)
-            return Result.Failure("Registration failed.", HttpStatusCode.BadRequest);
+            return Result.Failure("Registration failed.", ResultStatus.BadRequest);
 
-        var domainUser = new User(userRegisterDto.Username, userRegisterDto.Email, isActive: true);
+        var domainUser = new User(userRegisterDto.Username, userRegisterDto.Email);
         domainUser.SetUid(authResult.UserId!.Value); // Set the Uuid to match Identity Id
 
         var insertResult = await _userRepository.Insert(domainUser, cancellationToken);
         if (insertResult.IsFailure)
         {
             // Compensation: rollback Identity user
-            await _identityService.Logout(authResult.UserId!.Value);
-            await _identityService.DeleteUser(authResult.UserId!.Value);
+            await _identityService.Logout(new UserByIdDto { Uuid = authResult.UserId.Value});
+            await _identityService.DeleteUser(new UserByIdDto { Uuid = authResult.UserId.Value });
             // Note: You might need a DeleteUser in IIdentityService, but for simplicity we just clear refresh token.
             return Result.Failure(
                 "User profile could not be created. Please contact support.",
-                HttpStatusCode.InternalServerError);
+                ResultStatus.InternalServerError);
         }
 
         return Result.Success();
@@ -63,73 +62,72 @@ public class AuthenticationService
     /// </summary>
     public async Task<Result<AuthResult>> Login(UserLogInDto userLogInDto, CancellationToken cancellationToken)
     {
-        var authResult = await _identityService.Login(userLogInDto.Username, userLogInDto.Password);
+        var authResult = await _identityService.Login(userLogInDto);
         if (authResult.IsFailure)
             return Result<AuthResult>.Failure(
                 authResult.Errors?.FirstOrDefault() ?? "Invalid login attempt",
-                HttpStatusCode.Unauthorized);
+                ResultStatus.Unauthorized);
 
         // Optional: Sync domain user state (e.g., reactivate if deactivated)
         var userId = authResult.UserId!.Value;
         var domainResult = await _userRepository.FindByUuid(userId, cancellationToken);
         if (domainResult == null)
         {
-            await _identityService.Logout(userId);
-            return Result<AuthResult>.Failure("User profile not found", HttpStatusCode.NotFound);
+            await _identityService.Logout(new UserByIdDto { Uuid = authResult.UserId.Value });
+            return Result<AuthResult>.Failure("User profile not found", ResultStatus.NotFound);
         }
 
         if (!domainResult.Value.IsDeleted)
         {
             // If domain user is deactivated, you might want to log out the identity user.
-            await _identityService.Logout(userId);
-            return Result<AuthResult>.Failure("Account is deactivated", HttpStatusCode.Forbidden);
+            await _identityService.Logout(new UserByIdDto { Uuid = authResult.UserId.Value });
+            return Result<AuthResult>.Failure("Account is deactivated", ResultStatus.Forbidden);
         }
 
         return Result<AuthResult>.Success(authResult);
     }
     #endregion
 
-    #region RefreshTokenAsync
+    #region RefreshToken(RefreshTokenDto refreshTokenDto)
     /// <summary>
     /// Refreshes access token using refresh token.
     /// </summary>
-    public async Task<Result<AuthResult>> RefreshToken(
-        string refreshToken,
-        CancellationToken cancellationToken)
+    public async Task<Result<AuthResult>> RefreshToken(RefreshTokenDto refreshTokenDto, CancellationToken cancellationToken)
     {
-        var authResult = await _identityService.RefreshToken(refreshToken);
+        var authResult = await _identityService.RefreshToken(refreshTokenDto);
         if (authResult.IsFailure)
             return Result<AuthResult>.Failure(
                 authResult.Errors?.FirstOrDefault() ?? "Invalid refresh token",
-                HttpStatusCode.Unauthorized);
+                ResultStatus.Unauthorized);
 
         return Result<AuthResult>.Success(authResult);
     }
     #endregion
 
-    #region LogoutAsync
+    #region Logout(UserByIdDto userByIdDto)
     /// <summary>
     /// Logs out the user (invalidates refresh token in Identity).
     /// </summary>
-    public async Task<Result> LogoutAsync( Guid userId, CancellationToken cancellationToken)
+    public async Task<Result> LogoutAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
-        var result = await _identityService.Logout(userId);
-        if (!result)
-            return Result.Failure("Logout failed", HttpStatusCode.BadRequest);
+        var result = await _identityService.Logout(userByIdDto);
+
+        if (result.IsFailure)
+            return Result.Failure("Logout failed", ResultStatus.BadRequest);
 
         return Result.Success();
     }
     #endregion
 
-    #region GetCurrentUserAsync
+    #region GetCurrentUser(UserByIdDto userByIdDto)
     /// <summary>
     /// Gets the combined user information from both Identity and Domain.
     /// </summary>
-    public async Task<Result<UserSingleDto>> GetCurrentUserAsync( Guid userId, CancellationToken cancellationToken)
+    public async Task<Result<UserSingleDto>> GetCurrentUserAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
         // Get identity user (via IIdentityService or directly? We assume IIdentityService has a method)
         // For simplicity, we retrieve domain user and map to DTO.
-        var domainUser = await _userRepository.FindByUuid(userId, cancellationToken);
+        var domainUser = await _userRepository.FindByUuid(userByIdDto.Uuid, cancellationToken);
         if (domainUser.IsFailure)
             return Result<UserSingleDto>.NotFound("User not found");
 
