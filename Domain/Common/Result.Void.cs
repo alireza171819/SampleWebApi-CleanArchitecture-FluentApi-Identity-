@@ -11,7 +11,20 @@ public class Result : Result<Result>
 {
     public Result() : base() { }
 
-    protected Result(bool isSuccess, string? message = null, string? error = null, HttpStatusCode statusCode = default) : base (isSuccess, error, statusCode)
+    /// <summary>
+    /// Initializes a new result without a value.
+    /// Typically used for failed results.
+    /// </summary>
+    /// <param name="isSuccess">
+    /// Indicates whether the operation completed successfully.
+    /// </param>
+    /// <param name="errorMessage">
+    /// The error message describing the failure, if any.
+    /// </param>
+    /// <param name="status">
+    /// The status associated with the operation result.
+    /// </param>
+    protected Result(bool isSuccess, string? errorMessage, ResultStatus status) : base (default, isSuccess, errorMessage, status)
     {
     }
 
@@ -19,27 +32,41 @@ public class Result : Result<Result>
     /// Represents a successful operation without return type
     /// </summary>
     /// <returns>A Result</returns>
-    public static Result Success() => new();
+    public static Result Success() => new(true, string.Empty, ResultStatus.Ok);
 
     /// <summary>
-    /// Creates a failed Result with the specified error message and HTTP status code.
+    /// Creates a failed result with the specified error message and status.
     /// </summary>
-    /// <param name="errorMessage">Description of the failure.</param>
-    /// <param name="statusCode">HTTP status code.</param>
-    /// <returns>A failed result.</returns>
-    public static Result Failure(string errorMessage, HttpStatusCode statusCode) => new(false, string.Empty, errorMessage, statusCode);
+    /// <param name="errorMessage">
+    /// A description of the failure.
+    /// </param>
+    /// <param name="status">
+    /// The status representing the failure reason.
+    /// </param>
+    /// <returns>
+    /// A failed result.
+    /// </returns>
+    public static Result Failure(string errorMessage, ResultStatus status) => new(false, errorMessage, status);
 
     /// <summary>
-    /// Creates a "Not Found" failed result with HTTP 404 status.
+    /// Creates a failed result with a NotFound status.
     /// </summary>
-    /// <param name="errorMessage">Details about what was not found.</param>
-    /// <returns>A failed result with 404 NotFound status.</returns>
-    public static Result NotFound(string errorMessage) => new(false, string.Empty, errorMessage, HttpStatusCode.NotFound);
+    /// <param name="errorMessage">
+    /// Details about the missing resource.
+    /// </param>
+    /// <returns>
+    /// A failed result with <see cref="ResultStatus.NotFound"/>.
+    /// </returns>
+    public static Result NotFound(string errorMessage) => new(false, errorMessage, ResultStatus.NotFound);
 
     /// <summary>
-    /// Creates a "Bad Request" failed result with HTTP 400 status.
+    /// Creates a failed result with a BadRequest status.
     /// </summary>
-    /// <param name="errorMessage">Description of the invalid request.</param>
-    /// <returns>A failed result with 400 BadRequest status.</returns>
-    public new static Result BadRequest(string errorMessage) => new(false, string.Empty, errorMessage, HttpStatusCode.BadRequest);
+    /// <param name="errorMessage">
+    /// Details about the invalid request.
+    /// </param>
+    /// <returns>
+    /// A failed result with <see cref="ResultStatus.BadRequest"/>.
+    /// </returns>
+    public new static Result BadRequest(string errorMessage) => new(false, errorMessage, ResultStatus.BadRequest);
 }

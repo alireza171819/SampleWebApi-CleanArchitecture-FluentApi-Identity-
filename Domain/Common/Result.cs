@@ -1,5 +1,4 @@
-﻿using System.Net;
-
+﻿
 namespace Domain.Common;
 
 /// <summary>
@@ -11,56 +10,78 @@ public class Result<T>
 {
     protected Result() { }
 
-    public Result(T value) => Value = value;
-
-    protected Result(bool isSuccess, string? error = null, HttpStatusCode statusCode = default)
-    {
-        IsSuccess = isSuccess;
-        ErrorMessage = error;
-        StatusCode = statusCode;
-    }
-    protected Result(T? value, bool isSuccess, string? errorMessage, HttpStatusCode statusCode = default)
+    /// <summary>
+    /// Initializes a new result without a value.
+    /// Typically used for failed results.
+    /// </summary>
+    /// <param name="isSuccess">
+    /// Indicates whether the operation completed successfully.
+    /// </param>
+    /// <param name="errorMessage">
+    /// The error message describing the failure, if any.
+    /// </param>
+    /// <param name="status">
+    /// The status associated with the operation result.
+    /// </param>
+    protected Result(T? value, bool isSuccess, string? errorMessage, ResultStatus status)
     {
         IsSuccess = isSuccess;
         ErrorMessage = errorMessage;
         Value = value;
-        StatusCode = statusCode;
+        Status = status;
     }
 
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
     public T? Value { get; }
     public string? ErrorMessage { get; }
-    public string? Message { get; }
-    public HttpStatusCode StatusCode { get; }
+    public ResultStatus Status { get; }
 
 
     /// <summary>
-    /// Creates a successful Result with the provided value.
+    /// Creates a successful result containing the specified value.
     /// </summary>
-    /// <param name="value">The value to wrap.</param>
-    /// <returns>A successful result with HTTP 200 OK status.</returns>
-    public static Result<T> Success(T value) => new(value, true, null, HttpStatusCode.OK);
+    /// <param name="value">
+    /// The value returned by the operation.
+    /// </param>
+    /// <returns>
+    /// A successful result with <see cref="ResultStatus.Ok"/>.
+    /// </returns>
+    public static Result<T> Success(T value) => new(value, true, string.Empty, ResultStatus.Ok);
 
     /// <summary>
-    /// Creates a failed Result with the specified error message and HTTP status code.
+    /// Creates a failed result with the specified error message and status.
     /// </summary>
-    /// <param name="errorMessage">Description of the failure.</param>
-    /// <param name="statusCode">HTTP status code.</param>
-    /// <returns>A failed result.</returns>
-    public static Result<T> Failure(string errorMessage, HttpStatusCode statusCode) => new(false, errorMessage, statusCode);
+    /// <param name="errorMessage">
+    /// A description of the failure.
+    /// </param>
+    /// <param name="status">
+    /// The status representing the failure reason.
+    /// </param>
+    /// <returns>
+    /// A failed result.
+    /// </returns>
+    public static Result<T> Failure(string errorMessage, ResultStatus statusCode) => new(default, false, errorMessage, statusCode);
 
     /// <summary>
-    /// Creates a "Not Found" failed result with HTTP 404 status.
+    /// Creates a failed result with a NotFound status.
     /// </summary>
-    /// <param name="errorMessage">Details about what was not found.</param>
-    /// <returns>A failed result with 404 NotFound status.</returns>
-    public static Result<T> NotFound(string errorMessage) => new(false, errorMessage, HttpStatusCode.NotFound);
+    /// <param name="errorMessage">
+    /// Details about the missing resource.
+    /// </param>
+    /// <returns>
+    /// A failed result with <see cref="ResultStatus.NotFound"/>.
+    /// </returns>
+    public static Result<T> NotFound(string errorMessage) => new(default, false, errorMessage, ResultStatus.NotFound);
 
     /// <summary>
-    /// Creates a "Bad Request" failed result with HTTP 400 status.
+    /// Creates a failed result with a BadRequest status.
     /// </summary>
-    /// <param name="errorMessage">Description of the invalid request.</param>
-    /// <returns>A failed result with 400 BadRequest status.</returns>
-    public static Result<T> BadRequest(string errorMessage) => new(false, errorMessage, HttpStatusCode.BadRequest);
+    /// <param name="errorMessage">
+    /// Details about the invalid request.
+    /// </param>
+    /// <returns>
+    /// A failed result with <see cref="ResultStatus.BadRequest"/>.
+    /// </returns>
+    public static Result<T> BadRequest(string errorMessage) => new(default, false, errorMessage, ResultStatus.BadRequest);
 }
