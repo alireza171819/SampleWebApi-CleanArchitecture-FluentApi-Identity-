@@ -61,11 +61,11 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
         }
         catch (OperationCanceledException)
         {
-            return Result.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result.Failure(ex.Message, ResultStatus.InternalServerError);
         }
        
     }
@@ -91,11 +91,11 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
         }
         catch (DbUpdateConcurrencyException)
         {
-            return Result.Failure("The entity was modified or deleted by another process.", HttpStatusCode.Conflict);
+            return Result.Failure("The entity was modified or deleted by another process.", ResultStatus.Conflict);
         }
         catch (Exception ex) 
         {
-            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion
@@ -123,11 +123,11 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
         }
         catch (DbUpdateConcurrencyException)
         {
-            return Result.Failure("The entity was modified or deleted by another process.", HttpStatusCode.Conflict);
+            return Result.Failure("The entity was modified or deleted by another process.", ResultStatus.Conflict);
         }
         catch (Exception ex)
         {
-            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion
@@ -156,11 +156,11 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
         }
         catch (DbUpdateConcurrencyException)
         {
-            return Result.Failure("The entity was modified or deleted by another process.", HttpStatusCode.Conflict);
+            return Result.Failure("The entity was modified or deleted by another process.", ResultStatus.Conflict);
         }
         catch (Exception ex)
         {
-            return Result.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion
@@ -180,11 +180,11 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
         }
         catch (OperationCanceledException)
         {
-            return Result<List<TEntity>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result<List<TEntity>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<List<TEntity>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<List<TEntity>>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion
@@ -209,11 +209,11 @@ public abstract class RepositoryBase<TDbContext, TEntity, TPrimaryKey> : IReposi
         }
         catch (OperationCanceledException)
         {
-            return Result<TEntity>.Failure("The request was canceled.", HttpStatusCode.RequestTimeout);
+            return Result<TEntity>.Failure("The request was canceled.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<TEntity>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<TEntity>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion

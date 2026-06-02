@@ -42,11 +42,11 @@ public class OrderRepository : RepositoryBase<AppDbContext, Order, int>, IOrderR
         }
         catch (OperationCanceledException)
         {
-            return Result<List<Order>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result<List<Order>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<List<Order>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<List<Order>>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
 
     }

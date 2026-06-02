@@ -2,7 +2,6 @@
 using Domain.Common;
 using Domain.Contracts.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
 
 namespace EfCore.Repositories;
 
@@ -39,11 +38,11 @@ public class ProductRepository : RepositoryBase<AppDbContext, Product, int> , IP
         }
         catch (OperationCanceledException)
         {
-            return Result<List<Product>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result<List<Product>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<List<Product>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<List<Product>>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
        
     }
@@ -72,11 +71,11 @@ public class ProductRepository : RepositoryBase<AppDbContext, Product, int> , IP
         }
         catch (OperationCanceledException)
         {
-            return Result<List<Product>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result<List<Product>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<List<Product>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<List<Product>>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion

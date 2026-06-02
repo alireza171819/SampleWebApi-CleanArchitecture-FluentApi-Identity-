@@ -42,11 +42,11 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
         }
         catch (OperationCanceledException)
         {
-            return Result<User>.Failure("The request was canceled.", HttpStatusCode.RequestTimeout);
+            return Result<User>.Failure("The request was canceled.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<User>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<User>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #region FindByUsername(string username)
@@ -73,11 +73,11 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
         }
         catch (OperationCanceledException)
         {
-            return Result<User>.Failure("The request was canceled.", HttpStatusCode.RequestTimeout);
+            return Result<User>.Failure("The request was canceled.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<User>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<User>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
 
@@ -107,11 +107,11 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
         }
         catch (OperationCanceledException)
         {
-            return Result<User>.Failure("The request was canceled.", HttpStatusCode.RequestTimeout);
+            return Result<User>.Failure("The request was canceled.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<User>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<User>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
 
@@ -136,11 +136,11 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
         }
         catch (OperationCanceledException)
         {
-            return Result<List<User>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result<List<User>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<List<User>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<List<User>>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
 
     }
@@ -169,11 +169,11 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
         }
         catch (OperationCanceledException)
         {
-            return Result<List<User>>.Failure("The request was canceled by the client.", HttpStatusCode.RequestTimeout);
+            return Result<List<User>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
         }
         catch (Exception ex)
         {
-            return Result<List<User>>.Failure(ex.Message, HttpStatusCode.InternalServerError);
+            return Result<List<User>>.Failure(ex.Message, ResultStatus.InternalServerError);
         }
     }
     #endregion
