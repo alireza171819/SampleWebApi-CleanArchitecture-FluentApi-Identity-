@@ -55,9 +55,9 @@ public class UserService : IUserService
         {
             // To detect the error of the user sending a duplicate uuid.
             if (result.ErrorMessage?.Contains("duplicate") == true || result.ErrorMessage?.Contains("unique") == true)
-                return Result.Failure("Duplicate Uuid provided.", HttpStatusCode.Conflict);
+                return Result.Failure("Duplicate Uuid provided.", ResultStatus.Conflict);
 
-            return Result.Failure(result.ErrorMessage, result.StatusCode);
+            return Result.Failure(result.ErrorMessage, result.Status);
         }
 
         return Result.Success();
@@ -95,7 +95,7 @@ public class UserService : IUserService
         var updateResult = await _userRepository.Update(user, cancellationToken);
 
         if (updateResult.IsFailure)
-            return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
+            return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
 
         return Result.Success();
     }
@@ -118,19 +118,19 @@ public class UserService : IUserService
         var findResult = await _userRepository.FindById(userByIdDto.Id, cancellationToken);
 
         if (findResult.IsFailure)
-            return Result.Failure(findResult.ErrorMessage, findResult.StatusCode);
+            return Result.Failure(findResult.ErrorMessage, findResult.Status);
 
         var user = findResult.Value;
 
         if (user.IsDeleted)
-            return Result.Failure("Product has already been deleted.", HttpStatusCode.Conflict);
+            return Result.Failure("Product has already been deleted.", ResultStatus.Conflict);
 
         user.Delete();
 
         var updateResult = await _userRepository.Update(user, cancellationToken);
 
         if (updateResult.IsFailure)
-            return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
+            return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
 
         return Result.Success();
     }
@@ -157,11 +157,11 @@ public class UserService : IUserService
 
         var result = await _userRepository.Delete(userByIdDto.Id, cancellationToken);
 
-        if (!result.IsSuccess && result.StatusCode == HttpStatusCode.NotFound)
+        if (!result.IsSuccess && result.Status == ResultStatus.NotFound)
             return Result.NotFound("Not found product for delete.");
 
         if (result.IsFailure)
-            return Result.Failure(result.ErrorMessage, result.StatusCode);
+            return Result.Failure(result.ErrorMessage, result.Status);
 
         return Result.Success();
     }
@@ -190,7 +190,7 @@ public class UserService : IUserService
         var result = await _userRepository.FindById(userByIdDto.Id, cancellationToken);
 
         if (result.IsFailure)
-            return Result<UserSingleDto>.Failure("User not found.", result.StatusCode);
+            return Result<UserSingleDto>.Failure("User not found.", result.Status);
 
         var user = result.Value;
         var userDto = new UserSingleDto
@@ -221,7 +221,7 @@ public class UserService : IUserService
         var result = await _userRepository.Select(cancellationToken);
 
         if (result.IsFailure)
-            return Result<UserListDto>.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result<UserListDto>.Failure(result.ErrorMessage, ResultStatus.InternalServerError);
 
         if (result.Value == null || !result.Value.Any())
             return Result<UserListDto>.Success(new UserListDto { SingleUserDtos = new List<UserSingleDto>() });

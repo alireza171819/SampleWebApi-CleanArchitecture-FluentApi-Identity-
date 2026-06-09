@@ -91,7 +91,7 @@ public class IdentityService : IIdentityService
     /// An <see cref="AuthResult"/> containing the tokens on success,
     /// or failure information (e.g., invalid credentials) on error.
     /// </returns>
-    public async Task<AuthResult> Login(UserLogInDto userLogInDto)
+    public async Task<AuthResult> Login(UserLoginDto userLogInDto)
     {
         var user = await _userManager.FindByNameAsync(userLogInDto.Username);
         if (user == null)

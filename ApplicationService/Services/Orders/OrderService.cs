@@ -71,9 +71,9 @@ public class OrderService : IOrderService
         {
             // To detect the error of the user sending a duplicate uuid.
             if (result.ErrorMessage?.Contains("duplicate") == true || result.ErrorMessage?.Contains("unique") == true)
-                return Result.Failure("Duplicate Uuid provided.", HttpStatusCode.Conflict);
+                return Result.Failure("Duplicate Uuid provided.", ResultStatus.Conflict);
 
-            return Result.Failure(result.ErrorMessage, result.StatusCode);
+            return Result.Failure(result.ErrorMessage, result.Status);
         }
 
         return Result.Success();
@@ -114,7 +114,7 @@ public class OrderService : IOrderService
         var result = await _orderRepository.Update(order, cancellationToken);
 
         if (result.IsFailure)
-            return Result.Failure(result.ErrorMessage, result.StatusCode);
+            return Result.Failure(result.ErrorMessage, result.Status);
 
         return Result.Success();
     }
@@ -136,19 +136,19 @@ public class OrderService : IOrderService
         var findResult = await _orderRepository.FindById(orderByIdDto.Id, cancellationToken);
 
         if (findResult.IsFailure)
-            return Result.Failure(findResult.ErrorMessage, findResult.StatusCode);
+            return Result.Failure(findResult.ErrorMessage, findResult.Status);
 
         var order = findResult.Value;
 
         if (order.IsDeleted)
-            return Result.Failure("Product has already been deleted.", HttpStatusCode.Conflict);
+            return Result.Failure("Product has already been deleted.", ResultStatus.Conflict);
 
         order.Delete();
 
         var updateResult = await _orderRepository.Update(order, cancellationToken);
 
         if (updateResult.IsFailure)
-            return Result.Failure(updateResult.ErrorMessage, updateResult.StatusCode);
+            return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
 
         return Result.Success();
     }
@@ -175,11 +175,11 @@ public class OrderService : IOrderService
 
         var result = await _orderRepository.Delete(orderByIdDto.Id, cancellationToken);
 
-        if (result.IsFailure && result.StatusCode == HttpStatusCode.NotFound)
+        if (result.IsFailure && result.Status == ResultStatus.NotFound)
             return Result.NotFound("Order for delete not found.");
 
         if (result.IsFailure)
-            return Result.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result.Failure(result.ErrorMessage, ResultStatus.InternalServerError);
 
         return Result.Success();
     }
@@ -236,7 +236,7 @@ public class OrderService : IOrderService
         var result = await _orderRepository.Select(cancellationToken);
 
         if (result.IsFailure)
-            return Result<OrderListDto>.Failure(result.ErrorMessage, HttpStatusCode.InternalServerError);
+            return Result<OrderListDto>.Failure(result.ErrorMessage, ResultStatus.InternalServerError);
 
         if (result.Value == null || !result.Value.Any())
             return Result<OrderListDto>.Success(new OrderListDto() { OrderDtos = new List<OrderSingleDto>()});

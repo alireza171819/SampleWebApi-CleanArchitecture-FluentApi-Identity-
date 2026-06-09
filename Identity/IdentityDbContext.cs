@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Identity;
 
-public class IdentityDbContext : IdentityDbContext<AppUser, IdentityRole<int>, int>
+public class IdentityDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
 {
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options)
    : base(options)
@@ -18,11 +18,11 @@ public class IdentityDbContext : IdentityDbContext<AppUser, IdentityRole<int>, i
 
         // Rename Identity tables (optional but cleaner)
         builder.Entity<AppUser>().ToTable("Users");
-        builder.Entity<IdentityRole<int>>().ToTable("Roles");
-        builder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
-        builder.Entity<IdentityUserClaim<int>>().ToTable("UserClaims");
-        builder.Entity<IdentityUserLogin<int>>().ToTable("UserLogins");
-        builder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
-        builder.Entity<IdentityUserToken<int>>().ToTable("UserTokens");
+        builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
     }
 }
