@@ -15,7 +15,7 @@ namespace ApplicationService.Services.Contracts
         /// <summary>
         /// Authenticates user and returns tokens. Also syncs domain user state if needed.
         /// </summary>
-        Task<Result<AuthResult>> Login(UserLogInDto userLogInDto, CancellationToken cancellationToken);
+        Task<Result<AuthResult>> Login(UserLoginDto userLogInDto, CancellationToken cancellationToken);
 
         /// <summary>
         /// Refreshes access token using refresh token.

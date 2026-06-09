@@ -56,6 +56,14 @@ public interface IProductService
     Task<Result> Delete(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Soft deletes a product by setting IsDeleted to true.
+    /// </summary>
+    /// <param name="productByIdDto">Product identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Success result or appropriate error.</returns>
+    Task<Result> SoftDelete(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Retrieves all products from the data source.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>

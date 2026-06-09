@@ -1,15 +1,17 @@
 ﻿using ApplicationService.Dtos.Orders;
 using ApplicationService.Services.Contracts;
 using Domain.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
+using System.Security.Claims;
 
 
 namespace SampleWebApi.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class OrderController : ControllerBase
+    public class OrderController : BaseApiController
     {
         private readonly IOrderService _orderService;
 
@@ -23,11 +25,39 @@ namespace SampleWebApi.Controllers
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>List of orders.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var result = await _orderService.GetAllAsync(cancellationToken);
-            return ToActionResult(result);
+            var result =
+                await _orderService.GetAll(
+                    cancellationToken);
+
+            return HandleResult(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("{id:int}/ship")]
+        public async Task<IActionResult> Ship(int id, CancellationToken cancellationToken)
+        {
+            var result =
+                await _orderService.Ship(
+                    id,
+                    cancellationToken);
+
+            return HandleResult(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("{id:int}/deliver")]
+        public async Task<IActionResult> Deliver(int id, CancellationToken cancellationToken)
+        {
+            var result =
+                await _orderService.Deliver(
+                    id,
+                    cancellationToken);
+
+            return HandleResult(result);
         }
 
         /// <summary>
@@ -39,7 +69,7 @@ namespace SampleWebApi.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var result = await _orderService.GetByIdAsync(id, cancellationToken);
+            var result = await _orderService.GetById(id, cancellationToken);
             return ToActionResult(result);
         }
 
@@ -49,12 +79,17 @@ namespace SampleWebApi.Controllers
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>List of user orders.</returns>
         [HttpGet("my-orders")]
-        public async Task<IActionResult> GetMyOrders(CancellationToken cancellationToken)
+        public async Task<IActionResult> MyOrders(CancellationToken cancellationToken)
         {
-            // فرض می‌کنیم یک سرویس دیگر یا متد در IOrderService وجود دارد که userId را از توکن دریافت می‌کند.
-            // یا می‌توانید userId را از طریق ICurrentUserService دریافت کنید و به سرویس پاس دهید.
-            var result = await _orderService.GetOrdersByCurrentUserAsync(cancellationToken);
-            return ToActionResult(result);
+            var userId =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var result =
+                await _orderService.GetOrdersForUser(
+                    int.Parse(userId!),
+                    cancellationToken);
+
+            return HandleResult(result);
         }
 
         /// <summary>
@@ -64,16 +99,14 @@ namespace SampleWebApi.Controllers
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Created order.</returns>
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] OrderCreateDto createDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create( OrderCreateDto dto, CancellationToken cancellationToken)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var result =
+                await _orderService.Create(
+                    dto,
+                    cancellationToken);
 
-            var result = await _orderService.CreateAsync(createDto, cancellationToken);
-            if (result.IsSuccess && result.Data != null)
-                return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result.Data);
-
-            return ToActionResult(result);
+            return HandleResult(result);
         }
 
         /// <summary>

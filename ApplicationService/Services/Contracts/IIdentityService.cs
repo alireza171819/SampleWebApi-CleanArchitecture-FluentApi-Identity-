@@ -24,7 +24,7 @@ public interface IIdentityService
     /// An <see cref="AuthResult"/> containing the tokens on success,
     /// or failure information (e.g., invalid credentials) on error.
     /// </returns>
-    Task<AuthResult> Login(UserLogInDto userLogInDto);
+    Task<AuthResult> Login(UserLoginDto userLogInDto);
 
     /// <summary>
     /// Generates a new access token using a valid refresh token.

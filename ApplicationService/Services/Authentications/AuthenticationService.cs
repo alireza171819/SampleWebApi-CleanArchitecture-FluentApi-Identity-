@@ -60,7 +60,7 @@ public class AuthenticationService : IAuthenticationService
     /// <summary>
     /// Authenticates user and returns tokens. Also syncs domain user state if needed.
     /// </summary>
-    public async Task<Result<AuthResult>> Login(UserLogInDto userLogInDto, CancellationToken cancellationToken)
+    public async Task<Result<AuthResult>> Login(UserLoginDto userLogInDto, CancellationToken cancellationToken)
     {
         var authResult = await _identityService.Login(userLogInDto);
         if (authResult.IsFailure)
@@ -103,6 +103,50 @@ public class AuthenticationService : IAuthenticationService
         return Result<AuthResult>.Success(authResult);
     }
     #endregion
+
+    #region ForgotPassword(ForgotPasswordDto forgotPasswordDto)
+    public async Task<Result<AuthResult>> ForgotPassword(ForgotPasswordDto forgotPasswordDto, CancellationToken cancellationToken)
+    {
+        var authResult = await _identityService.ForgotPassword(forgotPasswordDto);
+        if (authResult.IsFailure)
+            return Result<AuthResult>.Failure(
+                authResult.Errors?.FirstOrDefault() ?? "Invalid refresh token",
+                ResultStatus.Unauthorized);
+
+        return Result<AuthResult>.Success(authResult);
+    }
+    #endregion
+
+    #region ConfirmEmail(ConfirmEmailDto confirmEmailDto)
+    /// <summary>
+    /// Confirms the user's email address using the token generated during registration.
+    /// </summary>
+    /// <param name="confirmEmailDto">Data transfer object containing required fields for confirm the user's  email address.</param>
+    /// <returns>
+    /// An <see cref="Result"/> indicating success or failure (e.g., invalid token, user not found).
+    /// </returns>
+    public async Task<Result> ConfirmEmail(ConfirmEmailDto confirmEmailDto)
+    {
+        if (confirmEmailDto.UserUuid == Guid.Empty || string.IsNullOrWhiteSpace(confirmEmailDto.Token))
+            return Result.Fail("Invalid request");
+
+        var authResult = await _identityService.ConfirmEmail(confirmEmailDto);
+        if (authResult.IsFailure)
+            return Result<AuthResult>.Failure(
+                authResult.Errors?.FirstOrDefault() ?? "Invalid refresh token",
+                ResultStatus.Unauthorized);
+
+        var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDto.Token);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.Select(e => e.Description).ToArray();
+            return Result.Fail(errors);
+        }
+
+        return Result.Ok(token: null, refreshToken: null, user.Id, user.UserName!);
+    }
+    #endregion
+
 
     #region Logout(UserByIdDto userByIdDto)
     /// <summary>

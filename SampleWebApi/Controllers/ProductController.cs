@@ -1,15 +1,13 @@
 ﻿using ApplicationService.Dtos.Products;
 using ApplicationService.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace SampleWebApi.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "admin")]
-public class ProductController : ControllerBase
+[Route("api/products")]
+public class ProductController : BaseApiController
 {
     private readonly IProductService _productService;
 
@@ -18,88 +16,88 @@ public class ProductController : ControllerBase
         _productService = productService;
     }
 
-    /// <summary>
-    /// Retrieves all products.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of products.</returns>
+    [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(
+        CancellationToken cancellationToken)
     {
-        var result = await _productService.GetAll(cancellationToken);
-        return Ok(result);
+        var result =
+            await _productService.GetAll(
+                cancellationToken);
+
+        return HandleResult(result);
     }
 
-    /// <summary>
-    /// Retrieves a product by its ID.
-    /// </summary>
-    /// <param name="id">Product identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Product details.</returns>
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    [AllowAnonymous]
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(
+        int id,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(productByIdDto);
+        var result =
+            await _productService.GetById(
+                new ProductByIdDto { Id = id },
+                cancellationToken);
 
-        var result = await _productService.GetById(productByIdDto, cancellationToken);
-        if (result.IsFailure)
-            return NotFound();
-
-        return Ok(result.Value);
+        return HandleResult(result);
     }
 
-    /// <summary>
-    /// Creates a new product.
-    /// </summary>
-    /// <param name="createDto">Product creation data.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Created product.</returns>
+    [Authorize(Roles = "Admin")]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductCreateDto createDto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(
+        ProductCreateDto dto,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        var result =
+            await _productService.Create(
+                dto,
+                cancellationToken);
 
-        var result = await _productService.Create(createDto, cancellationToken);
-        if (result.IsFailure)
-            return BadRequest(result);
-
-        return Ok(result);
+        return HandleResult(result);
     }
 
-    /// <summary>
-    /// Updates an existing product.
-    /// </summary>
-    /// <param name="productUpdateDto">Product update data.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>No content if successful.</returns>
-    [HttpPut]
-    public async Task<IActionResult> Update([FromBody] ProductUpdateDto productUpdateDto, CancellationToken cancellationToken)
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(
+        int id,
+        ProductUpdateDto dto,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        dto.Id = id;
 
-        if (productUpdateDto.Id <= 0)
-            return BadRequest("ID mismatch between URL and body.");
+        var result =
+            await _productService.Update(
+                dto,
+                cancellationToken);
 
-        var result = await _productService.Update(productUpdateDto, cancellationToken);
-        return Ok(result);
+        return HandleResult(result);
     }
 
-    /// <summary>
-    /// Deletes a product by its ID.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>No content if successful.</returns>
-    [HttpDelete]
-    public async Task<IActionResult> Delete([FromBody]ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        var result =
+            await _productService.Delete(
+                new ProductByIdDto { Id = id },
+                cancellationToken);
 
-        var result = await _productService.Delete(productByIdDto, cancellationToken);
-        return Ok(result);
+        return HandleResult(result);
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("{id:int}/soft-delete")]
+    public async Task<IActionResult> SoftDelete(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var result =
+            await _productService.SoftDelete(
+                new ProductByIdDto { Id = id },
+                cancellationToken);
+
+        return HandleResult(result);
+    }
 }
