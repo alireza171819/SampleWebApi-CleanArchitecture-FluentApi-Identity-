@@ -38,7 +38,7 @@ public class IdentityService : IIdentityService
     /// An <see cref="AuthResult"/> containing the authentication tokens (access and refresh)
     /// and any validation errors or failure information.
     /// </returns>
-    public async Task<AuthResult> Register(UserRegisterDto userRegisterDto)
+    public async Task<AuthResult> RegisterAsync(UserRegisterDto userRegisterDto)
     {
         var existingUser = await _userManager.FindByNameAsync(userRegisterDto.Username);
         if (existingUser != null)
@@ -91,7 +91,7 @@ public class IdentityService : IIdentityService
     /// An <see cref="AuthResult"/> containing the tokens on success,
     /// or failure information (e.g., invalid credentials) on error.
     /// </returns>
-    public async Task<AuthResult> Login(UserLoginDto userLogInDto)
+    public async Task<AuthResult> LoginAsync(UserLoginDto userLogInDto)
     {
         var user = await _userManager.FindByNameAsync(userLogInDto.Username);
         if (user == null)
@@ -131,7 +131,7 @@ public class IdentityService : IIdentityService
     /// An <see cref="AuthResult"/> containing a new access token (and possibly a new refresh token)
     /// if the refresh token is valid; otherwise, failure information.
     /// </returns>
-    public async Task<AuthResult> RefreshToken(RefreshTokenDto refreshTokenDto)
+    public async Task<AuthResult> RefreshTokenAsync(RefreshTokenDto refreshTokenDto)
     {
         var user = await _userManager.Users
             .FirstOrDefaultAsync(u => u.RefreshToken == refreshTokenDto.RefreshToken);
@@ -162,7 +162,7 @@ public class IdentityService : IIdentityService
     /// An <see cref="AuthResult"/> containing the reset token in the Token property if successful,
     /// or failure information if the email does not exist or user is inactive.
     /// </returns>
-    public async Task<AuthResult> ForgotPassword(ForgotPasswordDto forgotPasswordDto)
+    public async Task<AuthResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
     {
         if (string.IsNullOrWhiteSpace(forgotPasswordDto.Email))
             return AuthResult.Fail("Email is required");
@@ -186,7 +186,7 @@ public class IdentityService : IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure (e.g., invalid token, user not found).
     /// </returns>
-    public async Task<AuthResult> ConfirmEmail(ConfirmEmailDto confirmEmailDto)
+    public async Task<AuthResult> ConfirmEmailAsync(ConfirmEmailDto confirmEmailDto)
     {
         if (confirmEmailDto.UserUuid == Guid.Empty || string.IsNullOrWhiteSpace(confirmEmailDto.Token))
             return AuthResult.Fail("Invalid request");
@@ -214,7 +214,7 @@ public class IdentityService : IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure (e.g., wrong current password, weak new password).
     /// </returns>
-    public async Task<AuthResult> ChangePassword(ChangePasswordDto changePasswordDto)
+    public async Task<AuthResult> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
     {
         if (changePasswordDto.UserUuid == Guid.Empty)
             return AuthResult.Fail("Invalid user identifier");
@@ -246,7 +246,7 @@ public class IdentityService : IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure .
     /// </returns>
-    public async Task<AuthResult> Logout(UserByIdDto userByIdDto)
+    public async Task<AuthResult> LogoutAsync(UserByIdDto userByIdDto)
     {
         if (userByIdDto.Uuid == Guid.Empty)
             return AuthResult.Fail("Invalid user identifier");
@@ -274,7 +274,7 @@ public class IdentityService : IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure .
     /// </returns>
-    public async Task<AuthResult> DeleteUser(UserByIdDto userByIdDto)
+    public async Task<AuthResult> DeleteUserAsync(UserByIdDto userByIdDto)
     {
         if (userByIdDto.Uuid == Guid.Empty)
             return AuthResult.Fail("Invalid user identifier");
@@ -301,7 +301,7 @@ public class IdentityService : IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure .
     /// </returns>
-    public async Task<AuthResult> SoftDeleteUser(UserByIdDto userByIdDto)
+    public async Task<AuthResult> SoftDeleteUserAsync(UserByIdDto userByIdDto)
     {
         if (userByIdDto.Uuid == Guid.Empty)
             return AuthResult.Fail("Invalid user identifier");

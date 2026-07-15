@@ -4,7 +4,7 @@ using FluentValidation;
 namespace ApplicationService.Validators.Authentications;
 
 public class UserLogInDtoValidator
-    : AbstractValidator<UserLogInDto>
+    : AbstractValidator<UserLoginDto>
 {
     public UserLogInDtoValidator()
     {

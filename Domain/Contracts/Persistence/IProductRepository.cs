@@ -20,5 +20,5 @@ public interface IProductRepository : IRepositoryBase<Product, int>
     /// a <see cref="Result{BadRequest}"/> if the name is invalid,
     /// or an error result on failure.
     /// </returns>
-    Task<Result<List<Product>>> Select(string productName, CancellationToken cancellationToken);
+    Task<Result<List<Product>>> SelectAsync(string productName, CancellationToken cancellationToken);
 }

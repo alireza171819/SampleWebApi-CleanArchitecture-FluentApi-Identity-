@@ -1,10 +1,9 @@
 ﻿using ApplicationService.Dtos.Orders;
-using ApplicationService.Dtos.Products;
 using ApplicationService.Services.Contracts;
 using Domain.Aggregates.Orders;
 using Domain.Common;
 using Domain.Contracts.Persistence;
-using System.Net;
+using FluentValidation;
 
 namespace ApplicationService.Services.Orders;
 
@@ -18,6 +17,8 @@ public class OrderService : IOrderService
 {
     #region Privet Fields
     private readonly IOrderRepository _orderRepository;
+    private readonly IValidator<OrderCreateDto> _createValidator;
+    private readonly IValidator<OrderUpdateDto> _updateValidator;
     #endregion
 
     #region Constructor
@@ -26,9 +27,13 @@ public class OrderService : IOrderService
     /// </summary>
     /// <param name="orderRepository">Repository used for Order persistence operations.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="orderRepository"/> is null.</exception>
-    public OrderService(IOrderRepository orderRepository)
+    public OrderService(IOrderRepository orderRepository,
+        IValidator<OrderCreateDto> createValidator,
+        IValidator<OrderUpdateDto> updateValidator)
     {
         _orderRepository = orderRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
     #endregion
 
@@ -45,24 +50,17 @@ public class OrderService : IOrderService
     /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Create(OrderCreateDto orderCreateDto, CancellationToken cancellationToken)
+    public async Task<Result> CreateAsync(OrderCreateDto orderCreateDto, CancellationToken cancellationToken)
     {
         if (orderCreateDto is null)
             return Result.BadRequest("Model is null .");
 
-        if (orderCreateDto.UserId <= 0)
-            return Result.BadRequest("UserId is Required .");
+        var validationResult = await _createValidator.ValidateAsync( orderCreateDto, cancellationToken);
 
-        if (orderCreateDto.OrderDate == default || orderCreateDto.OrderDate > DateTime.UtcNow)
-            return Result.BadRequest("OrderDate is invalid.");
+        if (validationResult.IsValid)
+            return Result.BadRequest(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
-        if (orderCreateDto.ShipedDate == default || orderCreateDto.ShipedDate < orderCreateDto.OrderDate)
-            return Result.BadRequest("ShippedDate invalid and cannot be before OrderDate.");
-
-        if (string.IsNullOrWhiteSpace(orderCreateDto.ShipAddress))
-            return Result.BadRequest("ShipAddress is required.");
-
-        var order = new Order(orderCreateDto.UserId, orderCreateDto.OrderDate, orderCreateDto.ShipedDate, orderCreateDto.ShipAddress);
+        var order = new Order(orderCreateDto.UserId, orderCreateDto.OrderDate, orderCreateDto.ShippedDate, orderCreateDto.ShippingAddress);
         order.SetUid(orderCreateDto.Uuid == Guid.Empty ? Guid.NewGuid() : orderCreateDto.Uuid);
 
         var result = await _orderRepository.Insert(order, cancellationToken);
@@ -93,23 +91,18 @@ public class OrderService : IOrderService
     /// <item><description><c>false</c> if the order with the specified ID does not exist (logical failure).</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Update(OrderUpdateDto orderUpdateDto, CancellationToken cancellationToken)
+    public async Task<Result> UpdateAsync(OrderUpdateDto orderUpdateDto, CancellationToken cancellationToken)
     {
         if (orderUpdateDto is null)
             return Result.BadRequest("Model is null .");
 
-        if (orderUpdateDto.Id <= 0)
-            return Result.BadRequest("Id is required .");
+        var validationResult = await _updateValidator.ValidateAsync( orderUpdateDto, cancellationToken);
 
-        if (orderUpdateDto.OrderDate == default || orderUpdateDto.OrderDate > DateTime.UtcNow)
-            return Result.BadRequest("OrderDate is invalid.");
+        if (validationResult.IsValid)
+            return Result.BadRequest(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
-        if (orderUpdateDto.ShipedDate == default || orderUpdateDto.ShipedDate < orderUpdateDto.OrderDate)
-            return Result.BadRequest("ShippedDate invalid and cannot be before OrderDate.");
-
-        Order order = new(orderUpdateDto.UserId, orderUpdateDto.OrderDate, orderUpdateDto.ShipedDate, orderUpdateDto.ShipAddress);
+        Order order = new(orderUpdateDto.UserId, orderUpdateDto.OrderDate, orderUpdateDto.ShippedDate, orderUpdateDto.ShippingAddress);
         order.SetId(orderUpdateDto.Id);
-        order.SetUid(orderUpdateDto.UUId == Guid.Empty ? Guid.NewGuid() : orderUpdateDto.UUId);
 
         var result = await _orderRepository.Update(order, cancellationToken);
 
@@ -168,7 +161,7 @@ public class OrderService : IOrderService
     /// <item><description><c>false</c> if no order with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Delete(OrderByIdDto orderByIdDto, CancellationToken cancellationToken)
+    public async Task<Result> DeleteAsync(OrderByIdDto orderByIdDto, CancellationToken cancellationToken)
     {
         if (orderByIdDto is null || orderByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
@@ -198,7 +191,7 @@ public class OrderService : IOrderService
     /// <item><description>A <c>NotFound</c> result if the order does not exist.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result<OrderSingleDto>> GetById(OrderByIdDto orderByIdDto, CancellationToken cancellationToken)
+    public async Task<Result<OrderSingleDto>> GetByIdAsync(OrderByIdDto orderByIdDto, CancellationToken cancellationToken)
     {
         if (orderByIdDto is null || orderByIdDto.Id <= 0)
             return Result<OrderSingleDto>.BadRequest("Model is null or invalid.");
@@ -214,7 +207,7 @@ public class OrderService : IOrderService
         orderDto.OrderDate = order.OrderDate;
         orderDto.UserId = order.UserId;
         orderDto.ShippAddress = order.ShippingAddress;
-        orderDto.ShippedDate = order.ShipedDate;
+        orderDto.ShippedDate = order.ShippedDate;
         orderDto.Uuid = order.Uuid;
 
         return Result<OrderSingleDto>.Success(orderDto);
@@ -231,7 +224,7 @@ public class OrderService : IOrderService
     /// If no orders exist, returns a successful result with an empty list (not NotFound).
     /// In case of a database or infrastructure error, returns a failure result.
     /// </returns>
-    public async Task<Result<OrderListDto>> GetAll(CancellationToken cancellationToken)
+    public async Task<Result<OrderListDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         var result = await _orderRepository.Select(cancellationToken);
 
@@ -246,7 +239,7 @@ public class OrderService : IOrderService
             Id = order.Id,
             UserId = order.UserId,
             OrderDate = order.OrderDate,
-            ShippedDate = order.ShipedDate,
+            ShippedDate = order.ShippedDate,
             Uuid = order.Uuid,
         }).ToList();
 

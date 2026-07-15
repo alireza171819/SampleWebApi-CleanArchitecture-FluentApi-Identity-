@@ -26,8 +26,11 @@ public class ProductService : IProductService
     /// Creates a new instance of <see cref="ProductService"/>.
     /// </summary>
     /// <param name="productRepository">Repository used for Product persistence operations.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="productRepository"/> is null.</exception>
-    public ProductService(IProductRepository productRepository, IValidator<ProductCreateDto> createValidator, IValidator<ProductUpdateDto> updateValidator)
+    /// <param name="createValidator">The validator used to validate <see cref="ProductCreateDto"/> when creating a new product.</param>
+    /// <param name="updateValidator">The validator used to validate <see cref="ProductUpdateDto"/> when updateing an existing product.</param>
+    public ProductService(IProductRepository productRepository,
+        IValidator<ProductCreateDto> createValidator,
+        IValidator<ProductUpdateDto> updateValidator)
     {
         _productRepository = productRepository;
         _createValidator = createValidator;
@@ -37,39 +40,28 @@ public class ProductService : IProductService
 
     #region Create(ProductCreateDto productCreateDto)
     /// <summary>
-    /// Creates a new product.
+    /// Create new product
     /// </summary>
-    /// <param name="productCreateDto">Data transfer object containing required fields for creating an product.</param>
-    /// <param name="cancellationToken">Token to cancel the operation if needed (e.g., due to client disconnection or timeout).</param>
+    /// <param name="productCreateDto">The DTO containing the product data to be created.</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
-    /// A standardized result containing:
-    /// <list type="bullet">
-    /// <item><description><c>true</c> if the product was successfully created and persisted.</description></item>
-    /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
-    /// </list>
+    /// A <see cref="Result"/> indicating whether the product was created successfully,
+    /// or containing error details if the operation fails.
     /// </returns>
-    public async Task<Result> Create(ProductCreateDto productCreateDto, CancellationToken cancellationToken)
+    public async Task<Result> CreateAsync(ProductCreateDto productCreateDto, CancellationToken cancellationToken)
     {
         if (productCreateDto is null)
             return Result.BadRequest("Model is null.");
 
-        var validationResult =
-       await _createValidator.ValidateAsync(
-           productCreateDto,
-           cancellationToken);
+        var validationResult = await _createValidator.ValidateAsync( productCreateDto, cancellationToken);
 
         if (!validationResult.IsValid)
-        {
-            return Result.BadRequest(
-                string.Join(" | ",
-                    validationResult.Errors
-                        .Select(x => x.ErrorMessage)));
-        }
+            return Result.BadRequest(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
         var product = new Product(productCreateDto.ProductName, productCreateDto.UnitPrice, productCreateDto.UnitsInStock);
         product.SetUid(Guid.NewGuid());
 
-        var result = await _productRepository.Insert(product, cancellationToken);
+        var result = await _productRepository.InsertAsync(product, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -88,40 +80,32 @@ public class ProductService : IProductService
     #region Update(ProductUpdateDto productUpdateDto)
     /// <summary>
     /// Update an existing product.
-    /// <param name="productUpdateDto">DTO containing the product ID and fields to update .</param>
+    /// <param name="productUpdateDto">The DTO containing the product data to be updated.</param>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
-    /// A standardized result containing:
-    /// <list type="bullet">
-    /// <item><description><c>true</c> if the product was found and successfully updated.</description></item>
-    /// <item><description><c>false</c> if the product with the specified ID does not exist (logical failure).</description></item>
-    /// </list>
+    /// A <see cref="Result"/> indicating whether the product was updated successfully,
+    /// or containing error details if the operation fails.
     /// </returns>
-    public async Task<Result> Update(ProductUpdateDto productUpdateDto, CancellationToken cancellationToken)
+    public async Task<Result> UpdateAsync(ProductUpdateDto productUpdateDto, CancellationToken cancellationToken)
     {
         if (productUpdateDto is null)
             return Result.BadRequest("Model is null.");
 
-        var validationResult =
-            await _updateValidator.ValidateAsync(
-                productUpdateDto,
-                cancellationToken);
+        var validationResult = await _updateValidator.ValidateAsync( productUpdateDto, cancellationToken);
 
         if (!validationResult.IsValid)
-        {
-            return Result.BadRequest(
-                string.Join(" | ",
-                    validationResult.Errors
-                        .Select(x => x.ErrorMessage)));
-        }
+            return Result.BadRequest(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
-        var product = await _productRepository.FindById(productUpdateDto.Id, cancellationToken);
-        if (product.IsFailure)
+        var result = await _productRepository.FindByIdAsync(productUpdateDto.Id, cancellationToken);
+
+        if (result.IsFailure)
             return Result.NotFound("Not found product for update.");
-        product.Value.SetName(productUpdateDto.ProductName);
-        product.Value.ChangePrice(productUpdateDto.UnitPrice);
 
-        var updateResult = await _productRepository.Update(product.Value, cancellationToken);
+        var product = result.Value;
+        product.SetName(productUpdateDto.ProductName);
+        product.ChangePrice(productUpdateDto.UnitPrice);
+
+        var updateResult = await _productRepository.UpdateAsync(product, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
@@ -133,17 +117,32 @@ public class ProductService : IProductService
 
     #region IncreaseStock( IncreaseProductStockDto dto)
 
-    public async Task<Result> IncreaseStock( IncreaseProductStockDto increaseProductStockDto, CancellationToken cancellationToken)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="increaseProductStockDto"></param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
+    /// <returns>
+    /// A <see cref="Result"/> indicating whether the product was increase successfully,
+    /// or containing error details if the operation fails.
+    /// </returns>
+    public async Task<Result> IncreaseStockAsync( IncreaseProductStockDto increaseProductStockDto, CancellationToken cancellationToken)
     {
         if (increaseProductStockDto is null)
             return Result.BadRequest("Model is null.");
 
-        var product = await _productRepository.FindById(increaseProductStockDto.ProductId, cancellationToken);
-        if (product.IsFailure)
-            return Result.NotFound("Not found product for increase stock.");
-        product.Value.IncreaseStock(increaseProductStockDto.Amount);
+        if (increaseProductStockDto.Amount <= 0)
+            return Result.BadRequest("Amount is invalid.");
 
-        var updateResult = await _productRepository.Update(product.Value, cancellationToken);
+        var result = await _productRepository.FindByIdAsync(increaseProductStockDto.ProductId, cancellationToken);
+
+        if (result.IsFailure)
+            return Result.NotFound("Not found product for increase stock.");
+
+        var product = result.Value;
+        product.IncreaseStock(increaseProductStockDto.Amount);
+
+        var updateResult = await _productRepository.UpdateAsync(product, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
@@ -153,18 +152,29 @@ public class ProductService : IProductService
     #endregion
 
     #region DecreaseStock( DecreaseProductStockDto decreaseProductStockDto)
-
-    public async Task<Result> DecreaseStock(DecreaseProductStockDto decreaseProductStockDto, CancellationToken cancellationToken)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="decreaseProductStockDto"></param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
+    /// <returns></returns>
+    public async Task<Result> DecreaseStockAsync(DecreaseProductStockDto decreaseProductStockDto, CancellationToken cancellationToken)
     {
         if (decreaseProductStockDto is null)
             return Result.BadRequest("Model is null.");
 
-        var product = await _productRepository.FindById(decreaseProductStockDto.ProductId, cancellationToken);
-        if (product.IsFailure)
-            return Result.NotFound("Not found product for increase stock.");
-        product.Value.DecreaseStock(decreaseProductStockDto.Amount);
+        if (decreaseProductStockDto.Amount <= 0)
+            return Result.BadRequest("Amount is invalid.");
 
-        var updateResult = await _productRepository.Update(product.Value, cancellationToken);
+        var result = await _productRepository.FindByIdAsync(decreaseProductStockDto.ProductId, cancellationToken);
+
+        if (result.IsFailure)
+            return Result.NotFound("Not found product for increase stock.");
+
+        var product = result.Value;
+        product.DecreaseStock(decreaseProductStockDto.Amount);
+
+        var updateResult = await _productRepository.UpdateAsync(product, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
@@ -179,14 +189,14 @@ public class ProductService : IProductService
     /// Soft deletes a product by setting IsDeleted to true.
     /// </summary>
     /// <param name="productByIdDto">Product identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>Success result or appropriate error.</returns>
-    public async Task<Result> SoftDelete(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result> SoftDeleteAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
     {
         if (productByIdDto is null || productByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var findResult = await _productRepository.FindById(productByIdDto.Id, cancellationToken);
+        var findResult = await _productRepository.FindByIdAsync(productByIdDto.Id, cancellationToken);
 
         if (findResult.IsFailure)
             return Result.Failure(findResult.ErrorMessage, findResult.Status);
@@ -198,7 +208,7 @@ public class ProductService : IProductService
 
         product.Delete();
 
-        var updateResult = await _productRepository.Update(product, cancellationToken);
+        var updateResult = await _productRepository.UpdateAsync(product, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
@@ -213,7 +223,7 @@ public class ProductService : IProductService
     /// Deletes an product by its identifier.
     /// </summary>
     /// <param name="productByIdDto">DTO containing the ID of the product to delete.</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
@@ -221,12 +231,12 @@ public class ProductService : IProductService
     /// <item><description><c>false</c> if no product with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Delete(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result> DeleteAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
     {
         if (productByIdDto is null || productByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var result = await _productRepository.Delete(productByIdDto.Id, cancellationToken);
+        var result = await _productRepository.DeleteAsync(productByIdDto.Id, cancellationToken);
 
         if (!result.IsSuccess && result.Status == ResultStatus.NotFound)
             return Result.NotFound("Not found product for delete.");
@@ -245,7 +255,7 @@ public class ProductService : IProductService
     /// Retrieves a single product by its unique identifier.
     /// </summary>
     /// <param name="productByIdDto">DTO containing the product ID to fetch.</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
     /// A standardized result containing:
     /// <list type="bullet">
@@ -253,12 +263,12 @@ public class ProductService : IProductService
     /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result<ProductSingleDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
+    public async Task<Result<ProductSingleDto>> GetByIdAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken)
     {
         if (productByIdDto is null || productByIdDto.Id <= 0)
             return Result<ProductSingleDto>.BadRequest("Model is null or invalid.");
 
-        var result = await _productRepository.FindById(productByIdDto.Id, cancellationToken);
+        var result = await _productRepository.FindByIdAsync(productByIdDto.Id, cancellationToken);
 
         if (result.IsFailure)
             return Result<ProductSingleDto>.Failure("Product not found.", result.Status);
@@ -288,9 +298,9 @@ public class ProductService : IProductService
     /// If no products exist, returns a successful result with an empty list (not NotFound).
     /// In case of a database or infrastructure error, returns a failure result.
     /// </returns>
-    public async Task<Result<ListProductDto>> GetAll(CancellationToken cancellationToken)
+    public async Task<Result<ListProductDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var result = await _productRepository.Select(cancellationToken);
+        var result = await _productRepository.SelectAsync(cancellationToken);
 
         if (result.IsFailure)
             return Result<ListProductDto>.Failure(result.ErrorMessage, ResultStatus.InternalServerError);

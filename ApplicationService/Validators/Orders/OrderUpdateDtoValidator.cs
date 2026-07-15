@@ -8,22 +8,15 @@ public class OrderUpdateDtoValidator
 {
     public OrderUpdateDtoValidator()
     {
-        RuleFor(x => x.Id)
-            .GreaterThan(0);
+        RuleFor(x => x.Id).GreaterThanOrEqualTo(0).NotNull().WithMessage("Order identifier is required.");
 
-        RuleFor(x => x.UUId)
-            .NotEqual(Guid.Empty);
+        RuleFor(x => x.UserId).NotNull().GreaterThanOrEqualTo(0).WithMessage("User identifier is Required.");
 
-        RuleFor(x => x.UserId)
-            .GreaterThan(0);
+        RuleFor(x => x.ShippingAddress).Cascade(CascadeMode.Stop).NotEmpty().WithMessage("Shipping address is required.")
+            .MaximumLength(500).WithMessage("The address cannot be longer than 500 words.");
 
-        RuleFor(x => x.ShipAddress)
-            .NotEmpty();
+        RuleFor(x => x.ShippedDate).Must((dto, shipDate) => !shipDate.HasValue || shipDate.Value >= dto.OrderDate).WithMessage("Shipped date cannot be before OrderDate.");
 
-        RuleFor(x => x.ShipedDate)
-            .GreaterThanOrEqualTo(x => x.OrderDate);
-
-        RuleForEach(x => x.SingleOrderDetailDtos)
-            .SetValidator(new OrderDetailSingleDtoValidator());
+        RuleForEach(x => x.OrderDetails).SetValidator(new OrderDetailSingleDtoValidator());
     }
 }

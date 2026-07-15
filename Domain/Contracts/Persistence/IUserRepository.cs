@@ -18,7 +18,7 @@ public interface IUserRepository : IRepositoryBase<User, int>
     /// A <see cref="Result{User}"/> containing the user if found;
     /// otherwise, a <see cref="Result{User}.NotFound"/> result.
     /// </returns>
-    Task<Result<User>> FindByUuid(Guid uuid, CancellationToken cancellationToken);
+    Task<Result<User>> FindByUuidAsync(Guid uuid, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves a user by its username.
@@ -29,7 +29,7 @@ public interface IUserRepository : IRepositoryBase<User, int>
     /// A <see cref="Result{User}"/> containing the user if found;
     /// otherwise, a <see cref="Result{User}.NotFound"/> result.
     /// </returns>
-    Task<Result<User>> FindByUsername(string username, CancellationToken cancellationToken);
+    Task<Result<User>> FindByUsernameAsync(string username, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves a user by its email address.
@@ -40,7 +40,7 @@ public interface IUserRepository : IRepositoryBase<User, int>
     /// A <see cref="Result{User}"/> containing the user if found;
     /// otherwise, a <see cref="Result{User}.NotFound"/> result.
     /// </returns>
-    Task<Result<User>> FindByEmail(string email, CancellationToken cancellationToken);
+    Task<Result<User>> FindByEmailAsync(string email, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves users whose names contain the specified search term (case‑sensitive, depends on database collation).
@@ -52,5 +52,5 @@ public interface IUserRepository : IRepositoryBase<User, int>
     /// a <see cref="Result{BadRequest}"/> if the name is invalid,
     /// or an error result on failure.
     /// </returns>
-    Task<Result<List<User>>> Select(string userName, CancellationToken cancellationToken);
+    Task<Result<List<User>>> SelectAsync(string userName, CancellationToken cancellationToken);
 }

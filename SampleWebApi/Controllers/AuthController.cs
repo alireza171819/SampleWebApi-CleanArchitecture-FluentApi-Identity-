@@ -22,7 +22,7 @@ public class AuthController : BaseApiController
         UserRegisterDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await _authenticationService.Register(dto, cancellationToken);
+        var result = await _authenticationService.RegisterAsync(dto, cancellationToken);
         return HandleResult(result);
     }
 
@@ -32,7 +32,7 @@ public class AuthController : BaseApiController
         UserLoginDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await _authenticationService.Login(dto, cancellationToken);
+        var result = await _authenticationService.LoginAsync(dto, cancellationToken);
         return HandleResult(result);
     }
 
@@ -42,7 +42,7 @@ public class AuthController : BaseApiController
         RefreshTokenDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await _authenticationService.RefreshToken(dto, cancellationToken);
+        var result = await _authenticationService.RefreshTokenAsync(dto, cancellationToken);
         return HandleResult(result);
     }
 
@@ -52,7 +52,7 @@ public class AuthController : BaseApiController
         ConfirmEmailDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await _authenticationService.C(dto, cancellationToken);
+        var result = await _authenticationService.ConfirmEmailAsync(dto, cancellationToken);
         return HandleResult(result);
     }
 

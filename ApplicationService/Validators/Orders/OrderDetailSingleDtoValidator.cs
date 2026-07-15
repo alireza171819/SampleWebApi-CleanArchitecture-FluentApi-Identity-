@@ -8,16 +8,12 @@ public class OrderDetailSingleDtoValidator
 {
     public OrderDetailSingleDtoValidator()
     {
-        RuleFor(x => x.UUId)
-            .NotEqual(Guid.Empty);
+        RuleFor(x => x.Uuid).NotEqual(Guid.Empty).WithMessage("Uuid is required.");
 
-        RuleFor(x => x.ProductId)
-            .GreaterThan(0);
+        RuleFor(x => x.ProductId).GreaterThanOrEqualTo(0).WithMessage("Product identifier is required.");
 
-        RuleFor(x => x.Quantity)
-            .GreaterThan(0);
+        RuleFor(x => x.Quantity).NotNull().GreaterThan(0).WithMessage("Quantity is invalid.");
 
-        RuleFor(x => x.UnitPrice)
-            .GreaterThan(0);
+        RuleFor(x => x.UnitPrice).NotNull().GreaterThan(0).WithMessage("Unit price is invalid.");
     }
 }

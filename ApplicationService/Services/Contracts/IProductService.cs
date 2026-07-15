@@ -25,7 +25,7 @@ public interface IProductService
     /// <item><description><c>false</c> if a logical conflict occurs (e.g., duplicate product code). Validation errors return <c>BadRequest</c>.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Create(ProductCreateDto productCreateDto, CancellationToken cancellationToken);
+    Task<Result> CreateAsync(ProductCreateDto productCreateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Replaces an existing product with the provided data.
@@ -39,7 +39,7 @@ public interface IProductService
     /// <item><description><c>false</c> if no product with the specified ID exists (logical failure).</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Update(ProductUpdateDto productUpdateDto, CancellationToken cancellationToken);
+    Task<Result> UpdateAsync(ProductUpdateDto productUpdateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes a product by its identifier.
@@ -53,7 +53,7 @@ public interface IProductService
     /// <item><description><c>false</c> if no product with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Delete(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
+    Task<Result> DeleteAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Soft deletes a product by setting IsDeleted to true.
@@ -61,7 +61,7 @@ public interface IProductService
     /// <param name="productByIdDto">Product identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success result or appropriate error.</returns>
-    Task<Result> SoftDelete(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
+    Task<Result> SoftDeleteAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all products from the data source.
@@ -72,7 +72,7 @@ public interface IProductService
     /// If no products exist, returns a successful result with an empty list (not <c>NotFound</c>).
     /// On database or infrastructure error, returns a failure result.
     /// </returns>
-    Task<Result<ListProductDto>> GetAll(CancellationToken cancellationToken);
+    Task<Result<ListProductDto>> GetAllAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves a single product by its unique identifier.
@@ -86,5 +86,5 @@ public interface IProductService
     /// <item><description>A <c>NotFound</c> result if the product does not exist.</description></item>
     /// </list>
     /// </returns>
-    Task<Result<ProductSingleDto>> GetById(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
+    Task<Result<ProductSingleDto>> GetByIdAsync(ProductByIdDto productByIdDto, CancellationToken cancellationToken);
 }

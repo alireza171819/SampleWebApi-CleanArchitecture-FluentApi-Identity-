@@ -18,7 +18,7 @@ public interface IUserService
     /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Create(UserCreateDto userCreateDto, CancellationToken cancellationToken);
+    Task<Result> CreateAsync(UserCreateDto userCreateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Update an existing user.
@@ -31,7 +31,7 @@ public interface IUserService
     /// <item><description><c>false</c> if the user with the specified ID does not exist (logical failure).</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Update(UserUpdateDto userUpdateDto, CancellationToken cancellationToken);
+    Task<Result> UpdateAsync(UserUpdateDto userUpdateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Soft deletes a user by setting IsDeleted to true.
@@ -53,7 +53,7 @@ public interface IUserService
     /// <item><description><c>false</c> if no user with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Delete(UserByIdDto userByIdDto, CancellationToken cancellationToken);
+    Task<Result> DeleteAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves a single user by its unique identifier.
@@ -67,7 +67,7 @@ public interface IUserService
     /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
     /// </list>
     /// </returns>
-    Task<Result<UserSingleDto>> GetById(UserByIdDto userByIdDto, CancellationToken cancellationToken);
+    Task<Result<UserSingleDto>> GetByIdAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all users from the data source.
@@ -78,5 +78,5 @@ public interface IUserService
     /// If no users exist, returns a successful result with an empty list (not NotFound).
     /// In case of a database or infrastructure error, returns a failure result.
     /// </returns>
-    Task<Result<UserListDto>> GetAll(CancellationToken cancellationToken);
+    Task<Result<UserListDto>> GetAllAsync(CancellationToken cancellationToken);
 }

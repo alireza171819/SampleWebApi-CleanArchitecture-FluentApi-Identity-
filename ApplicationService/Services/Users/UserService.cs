@@ -38,7 +38,7 @@ public class UserService : IUserService
     /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Create(UserCreateDto userCreateDto, CancellationToken cancellationToken)
+    public async Task<Result> CreateAsync(UserCreateDto userCreateDto, CancellationToken cancellationToken)
     {
         if (userCreateDto is null)
             return Result.BadRequest("Model is null.");
@@ -77,7 +77,7 @@ public class UserService : IUserService
     /// <item><description><c>false</c> if the user with the specified ID does not exist (logical failure).</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Update(UserUpdateDto userUpdateDto, CancellationToken cancellationToken)
+    public async Task<Result> UpdateAsync(UserUpdateDto userUpdateDto, CancellationToken cancellationToken)
     {
         if (userUpdateDto is null)
             return Result.BadRequest("Model is null.");
@@ -90,7 +90,6 @@ public class UserService : IUserService
 
         User user = new(userUpdateDto.Username, userUpdateDto.Email);
         user.SetId(userUpdateDto.Id);
-        user.SetUid(userUpdateDto.Uuid == Guid.Empty ? Guid.NewGuid() : userUpdateDto.Uuid);
 
         var updateResult = await _userRepository.Update(user, cancellationToken);
 
@@ -150,7 +149,7 @@ public class UserService : IUserService
     /// <item><description><c>false</c> if no user with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result> Delete(UserByIdDto userByIdDto, CancellationToken cancellationToken)
+    public async Task<Result> DeleteAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
         if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
@@ -182,7 +181,7 @@ public class UserService : IUserService
     /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
     /// </list>
     /// </returns>
-    public async Task<Result<UserSingleDto>> GetById(UserByIdDto userByIdDto, CancellationToken cancellationToken)
+    public async Task<Result<UserSingleDto>> GetByIdAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
         if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result<UserSingleDto>.BadRequest("Model is null or invalid.");
@@ -216,7 +215,7 @@ public class UserService : IUserService
     /// If no users exist, returns a successful result with an empty list (not NotFound).
     /// In case of a database or infrastructure error, returns a failure result.
     /// </returns>
-    public async Task<Result<UserListDto>> GetAll(CancellationToken cancellationToken)
+    public async Task<Result<UserListDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         var result = await _userRepository.Select(cancellationToken);
 

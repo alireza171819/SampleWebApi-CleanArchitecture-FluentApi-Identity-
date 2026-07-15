@@ -25,7 +25,7 @@ public interface IOrderService
     /// <item><description><c>false</c> if the operation logically failed (e.g., duplicate UUID) — note that validation errors typically return <c>Result.BadRequest</c> without a value.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Create(OrderCreateDto orderCreateDto, CancellationToken cancellationToken);
+    Task<Result> CreateAsync(OrderCreateDto orderCreateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Update an existing order.
@@ -38,7 +38,7 @@ public interface IOrderService
     /// <item><description><c>false</c> if the order with the specified ID does not exist (logical failure).</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Update(OrderUpdateDto orderUpdateDto, CancellationToken cancellationToken);
+    Task<Result> UpdateAsync(OrderUpdateDto orderUpdateDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes an order by its identifier.
@@ -52,7 +52,7 @@ public interface IOrderService
     /// <item><description><c>false</c> if no order with the given ID exists.</description></item>
     /// </list>
     /// </returns>
-    Task<Result> Delete(OrderByIdDto orderByIdDto, CancellationToken cancellationToken);
+    Task<Result> DeleteAsync(OrderByIdDto orderByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves a single order by its unique identifier.
@@ -66,7 +66,7 @@ public interface IOrderService
     /// <item><description>A <c>NotFound</c> result if the order does not exist.</description></item>
     /// </list>
     /// </returns>
-    Task<Result<OrderSingleDto>> GetById(OrderByIdDto orderByIdDto, CancellationToken cancellationToken);
+    Task<Result<OrderSingleDto>> GetByIdAsync(OrderByIdDto orderByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all orders from the data source.
@@ -77,6 +77,6 @@ public interface IOrderService
     /// If no orders exist, returns a successful result with an empty list (not NotFound).
     /// In case of a database or infrastructure error, returns a failure result.
     /// </returns>
-    Task<Result<OrderListDto>> GetAll(CancellationToken cancellationToken);
+    Task<Result<OrderListDto>> GetAllAsync(CancellationToken cancellationToken);
 }
 

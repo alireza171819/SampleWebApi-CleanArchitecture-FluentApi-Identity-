@@ -8,17 +8,17 @@ public class Order : SoftDeletableEntity
     private Order() { } // for EF
     private readonly List<OrderDetial> _orderDetails = new();
 
-    public Order(int userId, DateTime orderDate, DateTime shipedDate, string shippingAddress)
+    public Order(int userId, DateTime orderDate, DateTime? shippedDate, string shippingAddress)
     {
         UserId = userId;
         OrderDate = orderDate;
-        ShipedDate = shipedDate;
+        ShippedDate = shippedDate;
         ShippingAddress = shippingAddress;
     }
     public int UserId { get; }
 
     public DateTime OrderDate { get; }
-    public DateTime ShipedDate { get; }
+    public DateTime? ShippedDate { get; }
     public string ShippingAddress { get; }
 
     internal IReadOnlyCollection<OrderDetial> OrderDetails => _orderDetails.AsReadOnly();

@@ -29,7 +29,7 @@ public class ProductRepository : RepositoryBase<AppDbContext, Product, int> , IP
     /// A result containing a list of active products (IsDeleted == false) on success,
     /// or an error result on failure.
     /// </returns>
-    public override async Task<Result<List<Product>>> Select(CancellationToken cancellationToken)
+    public override async Task<Result<List<Product>>> SelectAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -60,7 +60,7 @@ public class ProductRepository : RepositoryBase<AppDbContext, Product, int> , IP
     /// a <see cref="Result{BadRequest}"/> if the name is invalid,
     /// or an error result on failure.
     /// </returns>
-    public async Task<Result<List<Product>>> Select(string productName, CancellationToken cancellationToken)
+    public async Task<Result<List<Product>>> SelectAsync(string productName, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(productName)) return Result<List<Product>>.BadRequest("Product name cannot be null or empty.");
 

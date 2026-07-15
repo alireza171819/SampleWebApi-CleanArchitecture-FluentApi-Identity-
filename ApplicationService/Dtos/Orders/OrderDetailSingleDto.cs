@@ -3,9 +3,9 @@ namespace ApplicationService.Dtos.Orders;
 
 public class OrderDetailSingleDto
 {
-    public Guid UUId { get; set; }
+    public Guid Uuid { get; set; }
     public int OrderId { get; set; }
     public int ProductId { get; set; }
-    public int UnitPrice { get; set; }
+    public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
 }

@@ -1,9 +1,7 @@
 ﻿using Domain.Aggregates.Orders;
-using Domain.Aggregates.Products;
 using Domain.Common;
 using Domain.Contracts.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
 
 namespace EfCore.Repositories;
 
@@ -33,7 +31,7 @@ public class OrderRepository : RepositoryBase<AppDbContext, Order, int>, IOrderR
     /// A result containing a list of active orders (IsDeleted == false) on success,
     /// or an error result on failure.
     /// </returns>
-    public override async Task<Result<List<Order>>> Select(CancellationToken cancellationToken)
+    public override async Task<Result<List<Order>>> SelectAsync(CancellationToken cancellationToken)
     {
         try
         {

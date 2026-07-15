@@ -29,7 +29,7 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
     /// A <see cref="Result{User}"/> containing the user if found;
     /// otherwise, a <see cref="Result{User}.NotFound"/> result.
     /// </returns>
-    public async Task<Result<User>> FindByUuid(Guid uuid, CancellationToken cancellationToken)
+    public async Task<Result<User>> FindByUuidAsync(Guid uuid, CancellationToken cancellationToken)
     {
         if (uuid == Guid.Empty) return Result<User>.BadRequest("Unic identifier is required.");
 
@@ -60,7 +60,7 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
     /// A <see cref="Result{User}"/> containing the user if found;
     /// otherwise, a <see cref="Result{User}.NotFound"/> result.
     /// </returns>
-    public async Task<Result<User>> FindByUsername(string username, CancellationToken cancellationToken)
+    public async Task<Result<User>> FindByUsernameAsync(string username, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(username.Trim())) return Result<User>.BadRequest("Username cannot be null or empty.");
 
@@ -94,7 +94,7 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
     /// A <see cref="Result{User}"/> containing the user if found;
     /// otherwise, a <see cref="Result{User}.NotFound"/> result.
     /// </returns>
-    public async Task<Result<User>> FindByEmail(string email, CancellationToken cancellationToken)
+    public async Task<Result<User>> FindByEmailAsync(string email, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(email.Trim())) return Result<User>.BadRequest("Email cannot be null or empty.");
 
@@ -127,7 +127,7 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
     /// A result containing a list of active users (IsDeleted == false) on success,
     /// or an error result on failure.
     /// </returns>
-    public override async Task<Result<List<User>>> Select(CancellationToken cancellationToken)
+    public override async Task<Result<List<User>>> SelectAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -158,7 +158,7 @@ public class UserRepository : RepositoryBase<AppDbContext, User, int>, IUserRepo
     /// a <see cref="Result{BadRequest}"/> if the name is invalid,
     /// or an error result on failure.
     /// </returns>
-    public async Task<Result<List<User>>> Select(string userName, CancellationToken cancellationToken)
+    public async Task<Result<List<User>>> SelectAsync(string userName, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(userName)) return Result<List<User>>.BadRequest("User name cannot be null or empty.");
 
