@@ -1,4 +1,5 @@
-﻿namespace ApplicationService.Common.Models;
+﻿
+namespace ApplicationService.Common.Models;
 
 public class AuthResult
 {
@@ -6,6 +7,17 @@ public class AuthResult
     {
         Errors = Array.Empty<string>();
     }
+
+    public AuthResult(bool isSuccess, string? token, string? refreshToken, Guid? userId, string? username, string[] errors)
+    {
+        IsSuccess = isSuccess;
+        Token = token;
+        RefreshToken = refreshToken;
+        UserId = userId;
+        Username = username;
+        Errors = errors;
+    }
+
     public bool IsSuccess { get; private set; }
     public bool IsFailure => !IsSuccess;
     public string? Token { get; private set; }
@@ -14,18 +26,7 @@ public class AuthResult
     public string? Username { get; private set; }
     public string[] Errors { get; private set; } 
 
-    public static AuthResult Ok(string token, string refreshToken, Guid userId, string username) => new()
-    {
-        IsSuccess = true,
-        Token = token,
-        RefreshToken = refreshToken,
-        UserId = userId,
-        Username = username
-    };
+    public static AuthResult Ok(string token, string refreshToken, Guid userId, string username) => new(true, token, refreshToken, userId, username, Array.Empty<string>());
 
-    public static AuthResult Fail(params string[] errors) => new()
-    {
-        IsSuccess = false,
-        Errors = errors
-    };
+    public static AuthResult Fail(params string[] errors) => new(false, null, null, Guid.Empty, null, errors);
 }
