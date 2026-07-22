@@ -1,11 +1,10 @@
-﻿using ApplicationService.Common.Models;
+﻿using ApplicationService.Common;
 using ApplicationService.Dtos.Authentications;
 using ApplicationService.Dtos.Users;
-using Domain.Common;
 
 namespace ApplicationService.Services.Contracts;
 
-public interface IAuthenticationService
+public interface IAccountService
 {
     /// <summary>
     /// Registers a new user in both Identity and Domain databases.
@@ -55,7 +54,7 @@ public interface IAuthenticationService
     /// A <see cref="Result"/> indicating whether the password reset request
     /// was processed successfully.
     /// </returns>
-    Task<Result> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto, CancellationToken cancellationToken);
+    Task<Result<AuthResult>> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto, CancellationToken cancellationToken);
 
 
     /// <summary>
@@ -66,9 +65,9 @@ public interface IAuthenticationService
     /// </param>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
-    /// An <see cref="AuthResult"/> containing the outcome of the password change operation.
+    /// A <see cref="Result{T}"/> containing a new <see cref="AuthResult"/> if the refresh
     /// </returns>
-    Task<AuthResult> ChangePasswordAsync(ChangePasswordDto changePasswordDto, CancellationToken cancellationToken);
+    Task<Result<AuthResult>> ChangePasswordAsync(ChangePasswordDto changePasswordDto, CancellationToken cancellationToken);
 
 
     /// <summary>

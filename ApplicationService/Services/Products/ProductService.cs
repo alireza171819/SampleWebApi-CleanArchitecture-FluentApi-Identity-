@@ -1,7 +1,7 @@
 ﻿using ApplicationService.Dtos.Products;
 using ApplicationService.Services.Contracts;
 using Domain.Aggregates.Products;
-using Domain.Common;
+using ApplicationService.Common;
 using Domain.Contracts.Persistence;
 using FluentValidation;
 
@@ -56,7 +56,7 @@ public class ProductService : IProductService
         var validationResult = await _createValidator.ValidateAsync( productCreateDto, cancellationToken);
 
         if (!validationResult.IsValid)
-            return Result.BadRequest(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
+            return Result.Invalid(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
         var product = new Product(productCreateDto.ProductName, productCreateDto.UnitPrice, productCreateDto.UnitsInStock);
         product.SetUid(Guid.NewGuid());
@@ -94,7 +94,7 @@ public class ProductService : IProductService
         var validationResult = await _updateValidator.ValidateAsync( productUpdateDto, cancellationToken);
 
         if (!validationResult.IsValid)
-            return Result.BadRequest(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
+            return Result.Invalid(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
         var result = await _productRepository.FindByIdAsync(productUpdateDto.Id, cancellationToken);
 

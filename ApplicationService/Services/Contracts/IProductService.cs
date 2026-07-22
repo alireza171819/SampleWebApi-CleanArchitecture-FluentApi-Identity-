@@ -1,6 +1,6 @@
 ﻿
 using ApplicationService.Dtos.Products;
-using Domain.Common;
+using ApplicationService.Common;
 
 namespace ApplicationService.Services.Contracts;
 /// <summary>

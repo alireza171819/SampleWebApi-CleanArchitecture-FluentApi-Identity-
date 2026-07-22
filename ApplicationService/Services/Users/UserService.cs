@@ -1,9 +1,8 @@
 ﻿using ApplicationService.Dtos.Users;
 using ApplicationService.Services.Contracts;
 using Domain.Aggregates.Users;
-using Domain.Common;
+using ApplicationService.Common;
 using Domain.Contracts.Persistence;
-using System.Net;
 
 namespace ApplicationService.Services.Users;
 
@@ -49,7 +48,7 @@ public class UserService : IUserService
         var user = new User(userCreateDto.Username, userCreateDto.Email);
         user.SetUid(userCreateDto.Uuid == Guid.Empty ? Guid.NewGuid() : userCreateDto.Uuid);
 
-        var result = await _userRepository.Insert(user, cancellationToken);
+        var result = await _userRepository.InsertAsync(user, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -91,7 +90,7 @@ public class UserService : IUserService
         User user = new(userUpdateDto.Username, userUpdateDto.Email);
         user.SetId(userUpdateDto.Id);
 
-        var updateResult = await _userRepository.Update(user, cancellationToken);
+        var updateResult = await _userRepository.UpdateAsync(user, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
@@ -114,7 +113,7 @@ public class UserService : IUserService
         if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var findResult = await _userRepository.FindById(userByIdDto.Id, cancellationToken);
+        var findResult = await _userRepository.FindByIdAsync(userByIdDto.Id, cancellationToken);
 
         if (findResult.IsFailure)
             return Result.Failure(findResult.ErrorMessage, findResult.Status);
@@ -126,7 +125,7 @@ public class UserService : IUserService
 
         user.Delete();
 
-        var updateResult = await _userRepository.Update(user, cancellationToken);
+        var updateResult = await _userRepository.UpdateAsync(user, cancellationToken);
 
         if (updateResult.IsFailure)
             return Result.Failure(updateResult.ErrorMessage, updateResult.Status);
@@ -154,7 +153,7 @@ public class UserService : IUserService
         if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result.BadRequest("Model is null or invalid.");
 
-        var result = await _userRepository.Delete(userByIdDto.Id, cancellationToken);
+        var result = await _userRepository.DeleteAsync(userByIdDto.Id, cancellationToken);
 
         if (!result.IsSuccess && result.Status == ResultStatus.NotFound)
             return Result.NotFound("Not found product for delete.");
@@ -186,12 +185,109 @@ public class UserService : IUserService
         if (userByIdDto is null || userByIdDto.Id <= 0)
             return Result<UserSingleDto>.BadRequest("Model is null or invalid.");
 
-        var result = await _userRepository.FindById(userByIdDto.Id, cancellationToken);
+        var result = await _userRepository.FindByIdAsync(userByIdDto.Id, cancellationToken);
+
+        if (result.IsFailure)
+            return Result<UserSingleDto>.Failure("User not found.", result.Status);
+
+        return Result<UserSingleDto>.Success(ToDto(result.Value));
+    }
+
+    #endregion
+
+    #region GetByUuid(UserByUuidDto userByUuidDto)
+
+    /// <summary>
+    /// Retrieves a single user by its unique UUID.
+    /// </summary>
+    /// <param name="userByUuidDto">DTO containing the user's UUID to fetch.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description>The <see cref="UserSingleDto"/> if the user exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result<UserSingleDto>> GetByUuidAsync(UserByUuidDto userByUuidDto, CancellationToken cancellationToken)
+    {
+        if (userByUuidDto is null || userByUuidDto.Uuid == Guid.Empty)
+            return Result<UserSingleDto>.BadRequest("Model is null or invalid.");
+
+        var result = await _userRepository.FindByUuidAsync(userByUuidDto.Uuid, cancellationToken);
+
+        if (result.IsFailure)
+            return Result<UserSingleDto>.Failure("User not found.", result.Status);
+
+        return Result<UserSingleDto>.Success(ToDto(result.Value));
+    }
+    #endregion
+
+    #region GetByEmail(UserByEmailDto userByEmailDto)
+
+    /// <summary>
+    /// Retrieves a single user by its email address.
+    /// </summary>
+    /// <param name="userByEmailDto">DTO containing the user's email address to fetch.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description>The <see cref="UserSingleDto"/> if the user exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result<UserSingleDto>> GetByEmailAsync(UserByEmailDto userByEmailDto, CancellationToken cancellationToken)
+    {
+        if (userByEmailDto is null || string.IsNullOrWhiteSpace(userByEmailDto.Email))
+            return Result<UserSingleDto>.BadRequest("Model is null or invalid.");
+
+        var result = await _userRepository.FindByEmailAsync(userByEmailDto.Email, cancellationToken);
 
         if (result.IsFailure)
             return Result<UserSingleDto>.Failure("User not found.", result.Status);
 
         var user = result.Value;
+
+        var userDto = new UserSingleDto
+        {
+            Id = user.Id,
+            Uuid = user.Uuid,
+            Username = user.Username,
+            Email = user.Email
+        };
+
+        return Result<UserSingleDto>.Success(userDto);
+    }
+
+    #endregion
+
+    #region GetByUsername(UserByUsernameDto userByUsernameDto)
+
+    /// <summary>
+    /// Retrieves a single user by its username.
+    /// </summary>
+    /// <param name="userByUsernameDto">DTO containing the user's username to fetch.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description>The <see cref="UserSingleDto"/> if the user exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
+    /// </list>
+    /// </returns>
+    public async Task<Result<UserSingleDto>> GetByUsernameAsync(UserByUsernameDto userByUsernameDto, CancellationToken cancellationToken)
+    {
+        if (userByUsernameDto is null || string.IsNullOrWhiteSpace(userByUsernameDto.Username))
+            return Result<UserSingleDto>.BadRequest("Model is null or invalid.");
+
+        var result = await _userRepository.FindByUsernameAsync(userByUsernameDto.Username, cancellationToken);
+
+        if (result.IsFailure)
+            return Result<UserSingleDto>.Failure("User not found.", result.Status);
+
+        var user = result.Value;
+
         var userDto = new UserSingleDto
         {
             Id = user.Id,
@@ -217,7 +313,7 @@ public class UserService : IUserService
     /// </returns>
     public async Task<Result<UserListDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var result = await _userRepository.Select(cancellationToken);
+        var result = await _userRepository.SelectAsync(cancellationToken);
 
         if (result.IsFailure)
             return Result<UserListDto>.Failure(result.ErrorMessage, ResultStatus.InternalServerError);
@@ -238,4 +334,13 @@ public class UserService : IUserService
     }
 
     #endregion
+
+
+    private static UserSingleDto ToDto(User user) => new()
+    {
+        Id = user.Id,
+        Uuid = user.Uuid,
+        Username = user.Username,
+        Email = user.Email
+    };
 }

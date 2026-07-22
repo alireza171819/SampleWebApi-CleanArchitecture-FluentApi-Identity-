@@ -1,4 +1,4 @@
-﻿using ApplicationService.Common.Models;
+﻿using ApplicationService.Common;
 using ApplicationService.Dtos.Authentications;
 using ApplicationService.Dtos.Users;
 
@@ -14,7 +14,7 @@ public interface IIdentityService
     /// An <see cref="AuthResult"/> containing the authentication tokens (access and refresh)
     /// and any validation errors or failure information.
     /// </returns>
-    Task<AuthResult> RegisterAsync(UserRegisterDto userRegisterDto);
+    Task<Result<AuthResult>> RegisterAsync(UserRegisterDto userRegisterDto);
 
     /// <summary>
     /// Authenticates a user and returns access and refresh tokens.
@@ -24,7 +24,7 @@ public interface IIdentityService
     /// An <see cref="AuthResult"/> containing the tokens on success,
     /// or failure information (e.g., invalid credentials) on error.
     /// </returns>
-    Task<AuthResult> LoginAsync(UserLoginDto userLogInDto);
+    Task<Result<AuthResult>> LoginAsync(UserLoginDto userLogInDto);
 
     /// <summary>
     /// Generates a new access token using a valid refresh token.
@@ -34,7 +34,7 @@ public interface IIdentityService
     /// An <see cref="AuthResult"/> containing a new access token (and possibly a new refresh token)
     /// if the refresh token is valid; otherwise, failure information.
     /// </returns>
-    Task<AuthResult> RefreshTokenAsync(RefreshTokenDto refreshTokenDto);
+    Task<Result<AuthResult>> RefreshTokenAsync(RefreshTokenDto refreshTokenDto);
 
     /// <summary>
     /// Generates a password reset token for the user with the specified email.
@@ -44,7 +44,7 @@ public interface IIdentityService
     /// An <see cref="AuthResult"/> containing the reset token in the Token property if successful,
     /// or failure information if the email does not exist or user is inactive.
     /// </returns>
-    Task<AuthResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
+    Task<Result<AuthResult>> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
 
     /// <summary>
     /// Confirms the user's email address using the token generated during registration.
@@ -53,7 +53,7 @@ public interface IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure (e.g., invalid token, user not found).
     /// </returns>
-    Task<AuthResult> ConfirmEmailAsync(ConfirmEmailDto confirmEmailDto);
+    Task<Result<AuthResult>> ConfirmEmailAsync(ConfirmEmailDto confirmEmailDto);
 
     /// <summary>
     /// Changes the user's password after verifying the current password.
@@ -62,7 +62,7 @@ public interface IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure (e.g., wrong current password, weak new password).
     /// </returns>
-    Task<AuthResult> ChangePasswordAsync(ChangePasswordDto changePasswordDto);
+    Task<Result<AuthResult>> ChangePasswordAsync(ChangePasswordDto changePasswordDto);
 
     /// <summary>
     /// Logs out the user by invalidating the refresh token or session.
@@ -71,7 +71,7 @@ public interface IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure .
     /// </returns>
-    Task<AuthResult> LogoutAsync(UserByIdDto userByIdDto);
+    Task<Result<AuthResult>> LogoutAsync(UserByIdDto userByIdDto);
 
     /// <summary>
     /// Permanently deletes a user.
@@ -80,7 +80,7 @@ public interface IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure .
     /// </returns>
-    Task<AuthResult> DeleteUserAsync(UserByIdDto userByIdDto);
+    Task<Result<AuthResult>> DeleteUserAsync(UserByIdDto userByIdDto);
 
     /// <summary>
     /// Soft deletes a user (marks as deleted without removing the record).
@@ -89,5 +89,5 @@ public interface IIdentityService
     /// <returns>
     /// An <see cref="AuthResult"/> indicating success or failure .
     /// </returns>
-    Task<AuthResult> SoftDeleteUserAsync(UserByIdDto userByIdDto);
+    Task<Result<AuthResult>> SoftDeleteUserAsync(UserByIdDto userByIdDto);
 }

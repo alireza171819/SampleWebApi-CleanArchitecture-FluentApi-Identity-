@@ -1,19 +1,16 @@
-﻿using ApplicationService.Common.Models;
+﻿using ApplicationService.Common;
 using ApplicationService.Dtos.Authentications;
 using ApplicationService.Dtos.Users;
 using ApplicationService.Services.Contracts;
-using Domain.Aggregates.Users;
-using Domain.Common;
-using Domain.Contracts.Persistence;
 using FluentValidation;
 
 namespace ApplicationService.Services.Authentications;
 
-public class AuthenticationService : IAuthenticationService
+public class AccountService : IAccountService
 {
     #region Privet Fields
     private readonly IIdentityService _identityService;
-    private readonly IUserRepository _userRepository;
+    private readonly IUserService _userService;
     private readonly IValidator<ConfirmEmailDto> _confirmEmailValidator;
     private readonly IValidator<ForgotPasswordDto> _forgotPasswordValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
@@ -23,10 +20,10 @@ public class AuthenticationService : IAuthenticationService
 
     #region Constructor
 
-    public AuthenticationService(IIdentityService identityService, IUserRepository userRepository)
+    public AccountService(IIdentityService identityService, IUserService userService)
     {
         _identityService = identityService;
-        _userRepository = userRepository;
+        _userService = userService;
     }
 
     #endregion
@@ -53,15 +50,17 @@ public class AuthenticationService : IAuthenticationService
         if (authResult.IsFailure)
             return Result.Failure("Registration failed.", ResultStatus.BadRequest);
 
-        var domainUser = new User(userRegisterDto.Username, userRegisterDto.Email);
-        domainUser.SetUid(authResult.UserId!.Value); // Set the Uuid to match Identity Id
+        var domainUser = new UserCreateDto();
+        domainUser.Uuid = authResult.Value.UserId.Value;
+        domainUser.Username = userRegisterDto.Username;
+        domainUser.Email = userRegisterDto.Email;
 
-        var insertResult = await _userRepository.InsertAsync(domainUser, cancellationToken);
+        var insertResult = await _userService.CreateAsync(domainUser, cancellationToken);
         if (insertResult.IsFailure)
         {
             // Compensation: rollback Identity user
-            await _identityService.LogoutAsync(new UserByIdDto { Uuid = authResult.UserId.Value});
-            await _identityService.DeleteUserAsync(new UserByIdDto { Uuid = authResult.UserId.Value });
+            await _identityService.LogoutAsync(new UserByIdDto { Uuid = authResult.Value.UserId.Value});
+            await _identityService.DeleteUserAsync(new UserByIdDto { Uuid = authResult.Value.UserId.Value });
             // Note: You might need a DeleteUser in IIdentityService, but for simplicity we just clear refresh token.
             return Result.Failure(
                 "User profile could not be created. Please contact support.",
@@ -96,13 +95,11 @@ public class AuthenticationService : IAuthenticationService
 
         var authResult = await _identityService.LoginAsync(userLogInDto);
         if (authResult.IsFailure)
-            return Result<AuthResult>.Failure(
-                authResult.Errors?.FirstOrDefault() ?? "Invalid login attempt",
-                ResultStatus.Unauthorized);
+            return Result<AuthResult>.Failure("Invalid login attempt", ResultStatus.Unauthorized);
 
         // Optional: Sync domain user state (e.g., reactivate if deactivated)
         var userId = authResult.UserId!.Value;
-        var domainResult = await _userRepository.FindByUuidAsync(userId, cancellationToken);
+        var domainResult = await _userService.GetByIdAsync(userId, cancellationToken);
         if (domainResult == null)
         {
             await _identityService.LogoutAsync(new UserByIdDto { Uuid = authResult.UserId.Value });
@@ -157,7 +154,7 @@ public class AuthenticationService : IAuthenticationService
     /// </param>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
-    /// A <see cref="Result"/> indicating whether the password reset request
+    /// A <see cref="Result{T}"/> indicating whether the password reset request
     /// was processed successfully.
     /// </returns>
     public async Task<Result<AuthResult>> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto, CancellationToken cancellationToken)
@@ -202,45 +199,53 @@ public class AuthenticationService : IAuthenticationService
         var result = await _identityService.ConfirmEmailAsync(confirmEmailDto);
 
         if (result.IsFailure)
-            return Result.Failure(result.Errors);
+            return Result.Failure(result.Errors.FirstOrDefault().ToString(), ResultStatus.InternalServerError);
+
+        return Result.Success();//todo
     }
     #endregion
 
+    #region ChangePassword(ChangePasswordDto changePasswordDto)
     /// <summary>
     /// Changes the user's password after verifying the current password.
     /// </summary>
-    ///  <param name="changePasswordDto">Data transfer object containing required fields for change user password.</param>
+    /// <param name="changePasswordDto">
+    /// The data required to change the user's password.
+    /// </param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
     /// <returns>
-    public async Task<AuthResult> ChangePasswordAsync(ChangePasswordDto changePasswordDto, CancellationToken cancellationToken)
+    /// A <see cref="Result{T}"/> containing a new <see cref="AuthResult"/> if the refresh
+    /// </returns>
+    public async Task<Result<AuthResult>> ChangePasswordAsync(ChangePasswordDto changePasswordDto, CancellationToken cancellationToken)
     {
         if (changePasswordDto == null)
-            return AuthResult.Fail("Model is null.");
+            return Result<AuthResult>.BadRequest("Model is null.");
 
         var validationResult = await _changePasswordValidator.ValidateAsync(changePasswordDto, cancellationToken);
 
         if (!validationResult.IsValid)
-            return AuthResult.Fail(validationResult.Errors.Select(e => e.ErrorMessage).ToArray());
+            return Result<AuthResult>.Invalid(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)));
 
         var result = await _identityService.ChangePasswordAsync(changePasswordDto);
 
         if (result.IsFailure)
         {
-            var errors = result.Errors.Select(e => e.d).ToArray();
-            return AuthResult.Fail(errors);
+            return Result<AuthResult>.Failure(string.Join(" | ", result.Errors), ResultStatus.InternalServerError);
         }
 
-        user.RefreshToken = null;
-        user.RefreshTokenExpiry = null;
-        await _userManager.UpdateAsync(user);
-
-        return AuthResult.Ok(token: null, refreshToken: null, user.Id, user.UserName!);
+        return Result<AuthResult>.Success(result);
     }
-
+    #endregion
 
     #region Logout(UserByIdDto userByIdDto)
     /// <summary>
-    /// Logs out the user (invalidates refresh token in Identity).
+    /// Logs out the specified user by invalidating the stored refresh token.
     /// </summary>
+    /// <param name="userByIdDto">The identifier of the user to log out.</param>
+    /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>
+    /// <returns>
+    /// A <see cref="Result"/> indicating whether the logout operation completed successfully.
+    /// </returns>
     public async Task<Result> LogoutAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken)
     {
         var result = await _identityService.LogoutAsync(userByIdDto);
