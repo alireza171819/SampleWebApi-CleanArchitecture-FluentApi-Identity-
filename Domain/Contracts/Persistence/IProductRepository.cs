@@ -1,5 +1,4 @@
 ﻿using Domain.Aggregates.Products;
-using Domain.Common;
 
 namespace Domain.Contracts.Persistence;
 
@@ -16,9 +15,7 @@ public interface IProductRepository : IRepositoryBase<Product, int>
     /// <param name="productName">The search term to look for within product names. Cannot be null or whitespace.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>
-    /// A result containing a list of matching products on success,
-    /// a <see cref="Result{BadRequest}"/> if the name is invalid,
-    /// or an error result on failure.
+    /// Return a list of matching products.
     /// </returns>
-    Task<Result<List<Product>>> SelectAsync(string productName, CancellationToken cancellationToken);
+    Task<List<Product>> SelectAsync(string productName, CancellationToken cancellationToken);
 }

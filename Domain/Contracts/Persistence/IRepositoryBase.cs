@@ -1,5 +1,4 @@
-﻿using Domain.Common;
-
+﻿
 namespace Domain.Contracts.Persistence;
 
 /// <summary>
@@ -15,46 +14,34 @@ public interface IRepositoryBase<TEntity, in TPrimaryKey> where TEntity : class
     /// </summary>
     /// <param name="entity">The entity to insert.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result of the operation.</returns>
-    Task<Result> InsertAsync(TEntity entity, CancellationToken cancellationToken);
+    Task InsertAsync(TEntity entity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Updates an existing entity in the database.
     /// </summary>
     /// <param name="entity">The entity with updated values.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result of the operation.</returns>
-    Task<Result> UpdateAsync(TEntity entity, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Deletes an entity by its primary key.
-    /// </summary>
-    /// <param name="id">The primary key value.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result of the operation.</returns>
-    Task<Result> DeleteAsync(TPrimaryKey id, CancellationToken cancellationToken);
+    Task UpdateAsync(TEntity entity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes the specified entity instance.
     /// </summary>
     /// <param name="entity">The entity to delete.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result of the operation.</returns>
-    Task<Result> DeleteAsync(TEntity entity, CancellationToken cancellationToken);
+    Task DeleteAsync(TEntity entity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all entities.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result containing a list of entities on success.</returns>
-    Task<Result<List<TEntity>>> SelectAsync(CancellationToken cancellationToken);
+    Task<List<TEntity>> SelectAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Finds an entity by its primary key.
     /// </summary>
     /// <param name="id">The primary key (can be null).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result containing the entity if found, otherwise error.</returns>
-    Task<Result<TEntity>> FindByIdAsync(TPrimaryKey? id, CancellationToken cancellationToken);
+    /// <returns>The entity if found, otherwise error.</returns>
+    Task<TEntity> FindByIdAsync(TPrimaryKey? id, CancellationToken cancellationToken);
 
 }

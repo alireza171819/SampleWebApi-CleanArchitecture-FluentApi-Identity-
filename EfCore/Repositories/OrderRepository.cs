@@ -1,5 +1,4 @@
 ﻿using Domain.Aggregates.Orders;
-using Domain.Common;
 using Domain.Contracts.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,26 +27,9 @@ public class OrderRepository : RepositoryBase<AppDbContext, Order, int>, IOrderR
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>
-    /// A result containing a list of active orders (IsDeleted == false) on success,
-    /// or an error result on failure.
+    /// A result containing a list of active orders (IsDeleted == false).
     /// </returns>
-    public override async Task<Result<List<Order>>> SelectAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            var query = await DbContext.Set<Order>().AsNoTracking().Where(p => p.IsDeleted == false).ToListAsync(cancellationToken);
-            return Result<List<Order>>.Success(query);
-        }
-        catch (OperationCanceledException)
-        {
-            return Result<List<Order>>.Failure("The request was canceled by the client.", ResultStatus.ClientClosedRequest);
-        }
-        catch (Exception ex)
-        {
-            return Result<List<Order>>.Failure(ex.Message, ResultStatus.InternalServerError);
-        }
-
-    }
+    public override async Task<List<Order>> SelectAsync(CancellationToken cancellationToken) => await DbContext.Set<Order>().AsNoTracking().Where(p => p.IsDeleted == false).ToListAsync(cancellationToken);
     #endregion
 
 }

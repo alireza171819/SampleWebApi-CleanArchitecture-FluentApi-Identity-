@@ -14,8 +14,7 @@ public interface IOrderRepository : IRepositoryBase<Order, int>
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>
-    /// A result containing a list of active orders (IsDeleted == false) on success,
-    /// or an error result on failure.
+    /// Return a list of active orders (IsDeleted == false).
     /// </returns>
-    Task<Result<List<Order>>> SelectAsync(CancellationToken cancellationToken);
+    Task<List<Order>> SelectAsync(CancellationToken cancellationToken);
 }
