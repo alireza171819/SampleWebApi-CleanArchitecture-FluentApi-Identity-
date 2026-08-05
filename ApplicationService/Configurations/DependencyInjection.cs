@@ -20,7 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IAccountService, AccountService>();
 
         services.AddValidatorsFromAssemblyContaining<ProductCreateDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<ProductUpdateDtoValidator>();

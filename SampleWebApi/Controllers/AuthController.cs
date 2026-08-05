@@ -9,9 +9,9 @@ namespace SampleWebApi.Controllers;
 [Route("api/auth")]
 public class AuthController : BaseApiController
 {
-    private readonly IAuthenticationService _authenticationService;
+    private readonly IAccountService _authenticationService;
 
-    public AuthController(IAuthenticationService authenticationService)
+    public AuthController(IAccountService authenticationService)
     {
         _authenticationService = authenticationService;
     }
