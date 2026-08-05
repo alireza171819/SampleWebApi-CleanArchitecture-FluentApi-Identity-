@@ -70,6 +70,20 @@ public interface IUserService
     Task<Result<UserSingleDto>> GetByIdAsync(UserByIdDto userByIdDto, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Retrieves a single user by its unique UUID.
+    /// </summary>
+    /// <param name="userByIdDto">DTO containing the user ID to fetch.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A standardized result containing:
+    /// <list type="bullet">
+    /// <item><description>The <see cref="UserSingleDto"/> if the user exists.</description></item>
+    /// <item><description>A <c>NotFound</c> result if the user does not exist.</description></item>
+    /// </list>
+    /// </returns>
+    Task<Result<UserSingleDto>> GetByUuidAsync(UserByIdDto userByUuidDto, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Retrieves all users from the data source.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation (e.g., due to client disconnect or timeout).</param>

@@ -98,22 +98,15 @@ public class AccountService : IAccountService
             return Result<AuthResult>.Failure("Invalid login attempt", ResultStatus.Unauthorized);
 
         // Optional: Sync domain user state (e.g., reactivate if deactivated)
-        var userId = authResult.UserId!.Value;
-        var domainResult = await _userService.GetByIdAsync(userId, cancellationToken);
-        if (domainResult == null)
+        var userId = authResult.Value.UserId!.Value;
+        var domainResult = await _userService.GetByUuidAsync(new UserByIdDto { Uuid = userId }, cancellationToken);
+        if (domainResult.IsFailure)
         {
-            await _identityService.LogoutAsync(new UserByIdDto { Uuid = authResult.UserId.Value });
+            await _identityService.LogoutAsync(new UserByIdDto { Uuid = authResult.Value.UserId.Value });
             return Result<AuthResult>.Failure("User profile not found", ResultStatus.NotFound);
         }
 
-        if (!domainResult.Value.IsDeleted)
-        {
-            // If domain user is deactivated, you might want to log out the identity user.
-            await _identityService.LogoutAsync(new UserByIdDto { Uuid = authResult.UserId.Value });
-            return Result<AuthResult>.Failure("Account is deactivated", ResultStatus.Forbidden);
-        }
-
-        return Result<AuthResult>.Success(authResult);
+        return Result<AuthResult>.Success(authResult.Value);
     }
     #endregion
 
@@ -137,11 +130,9 @@ public class AccountService : IAccountService
 
         var authResult = await _identityService.RefreshTokenAsync(refreshTokenDto);
         if (authResult.IsFailure)
-            return Result<AuthResult>.Failure(
-                authResult.Errors?.FirstOrDefault() ?? "Invalid refresh token",
-                ResultStatus.Unauthorized);
+            return Result<AuthResult>.Failure(authResult.ErrorMessage,ResultStatus.Unauthorized);
 
-        return Result<AuthResult>.Success(authResult);
+        return Result<AuthResult>.Success(authResult.Value);
     }
     #endregion
 
@@ -170,11 +161,9 @@ public class AccountService : IAccountService
 
         var authResult = await _identityService.ForgotPasswordAsync(forgotPasswordDto);
         if (authResult.IsFailure)
-            return Result<AuthResult>.Failure(
-                authResult.Errors?.FirstOrDefault() ?? "Invalid refresh token",
-                ResultStatus.Unauthorized);
+            return Result<AuthResult>.Failure(string.Join(" | ", validationResult.Errors.Select(x => x.ErrorMessage)), ResultStatus.Unauthorized);
 
-        return Result<AuthResult>.Success(authResult);
+        return Result<AuthResult>.Success(authResult.Value);
     }
     #endregion
 
@@ -199,7 +188,7 @@ public class AccountService : IAccountService
         var result = await _identityService.ConfirmEmailAsync(confirmEmailDto);
 
         if (result.IsFailure)
-            return Result.Failure(result.Errors.FirstOrDefault().ToString(), ResultStatus.InternalServerError);
+            return Result.Failure(result.ErrorMessage, ResultStatus.InternalServerError);
 
         return Result.Success();//todo
     }
@@ -229,11 +218,9 @@ public class AccountService : IAccountService
         var result = await _identityService.ChangePasswordAsync(changePasswordDto);
 
         if (result.IsFailure)
-        {
-            return Result<AuthResult>.Failure(string.Join(" | ", result.Errors), ResultStatus.InternalServerError);
-        }
+            return Result<AuthResult>.Failure(result.ErrorMessage, ResultStatus.InternalServerError);
 
-        return Result<AuthResult>.Success(result);
+        return Result<AuthResult>.Success(result.Value);
     }
     #endregion
 
@@ -265,7 +252,7 @@ public class AccountService : IAccountService
     {
         // Get identity user (via IIdentityService or directly? We assume IIdentityService has a method)
         // For simplicity, we retrieve domain user and map to DTO.
-        var domainUser = await _userRepository.FindByUuidAsync(userByIdDto.Uuid, cancellationToken);
+        var domainUser = await _userService.GetByUuidAsync(userByIdDto, cancellationToken);
         if (domainUser.IsFailure)
             return Result<UserSingleDto>.NotFound("User not found");
 
