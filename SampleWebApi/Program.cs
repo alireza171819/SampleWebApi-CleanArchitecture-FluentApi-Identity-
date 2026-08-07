@@ -1,5 +1,6 @@
 using ApplicationService.Configurations;
 using Identity.Configurations;
+using SampleWebApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseGlobalException();
 
 app.MapControllers();
 

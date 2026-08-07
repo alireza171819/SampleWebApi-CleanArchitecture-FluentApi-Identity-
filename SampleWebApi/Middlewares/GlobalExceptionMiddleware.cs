@@ -1,8 +1,4 @@
-﻿using System.Text.Json;
-using ApplicationService.Common;
-using Domain.Exceptions;
-using FluentValidation;
-using Microsoft.AspNetCore.Http;
+﻿using SampleWebApi.Helpers;
 
 namespace SampleWebApi.Middlewares;
 
@@ -35,68 +31,11 @@ public sealed class GlobalExceptionMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var result = exception switch
-        {
-            DomainException ex =>
-                Result.Invalid(ex.Message),
+        var result = ExceptionMapper.Map(exception);
 
-            ValidationException ex =>
-                Result.Invalid(string.Join(" | ",
-                    ex.Errors.Select(x => x.ErrorMessage))),
-
-            UnauthorizedAccessException ex =>
-                Result.Failure(ex.Message, ResultStatus.Unauthorized),
-
-            KeyNotFoundException ex =>
-                Result.Failure(ex.Message, ResultStatus.NotFound),
-
-            OperationCanceledException =>
-                Result.Failure(
-                    "Request was cancelled.",
-                    ResultStatus.ClientClosedRequest),
-
-            _ =>
-                Result.Failure(
-                    "An unexpected error has occurred.",
-                    ResultStatus.InternalServerError)
-        };
-
-        context.Response.StatusCode = GetStatusCode(result.Status);
+        context.Response.StatusCode = StatusCodeMapper.Map(result.Status);
         context.Response.ContentType = "application/json";
 
-        await context.Response.WriteAsync(
-            JsonSerializer.Serialize(result));
-    }
-
-    private static int GetStatusCode(ResultStatus status)
-    {
-        return status switch
-        {
-            ResultStatus.Ok => StatusCodes.Status200OK,
-
-            ResultStatus.NoContent => StatusCodes.Status204NoContent,
-
-            ResultStatus.BadRequest => StatusCodes.Status400BadRequest,
-
-            ResultStatus.Invalid => StatusCodes.Status400BadRequest,
-
-            ResultStatus.Unauthorized => StatusCodes.Status401Unauthorized,
-
-            ResultStatus.Forbidden => StatusCodes.Status403Forbidden,
-
-            ResultStatus.NotFound => StatusCodes.Status404NotFound,
-
-            ResultStatus.Conflict => StatusCodes.Status409Conflict,
-
-            ResultStatus.Unavailable => StatusCodes.Status503ServiceUnavailable,
-
-            ResultStatus.CriticalError => StatusCodes.Status500InternalServerError,
-
-            ResultStatus.InternalServerError => StatusCodes.Status500InternalServerError,
-
-            ResultStatus.ClientClosedRequest => 499,
-
-            _ => StatusCodes.Status500InternalServerError
-        };
+        await context.Response.WriteAsJsonAsync(result);
     }
 }
